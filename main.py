@@ -14,10 +14,8 @@ template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir),
                                autoescape=True)
 
+
 SECRET = "we-haVe_Always#Lived+in@the=CasTle!<3"
-
-
-
 
 
 class BlogHandler(webapp2.RequestHandler):
@@ -114,8 +112,22 @@ class Signup(BlogHandler):
 
 
 class Login(BlogHandler):
-    # redirect to welcome page
-    pass
+    # if login succeed redirect to welcome page
+    def get(self):
+        self.render("login.html")
+
+    def post(self):
+        input_username = self.request.get('username')
+        input_password = self.request.get('password')
+        user = valid_pw(input_username, input_password)
+        if user:
+            self.set_secure_cookie("user_id", str(user.key().id()))
+            self.redirect("/welcome")
+            pass
+        else:
+            error = "Invalid login"
+            params = dict(username=input_username, error=error)
+            self.render('login.html', **params)
 
 
 class Logout(BlogHandler):
@@ -165,13 +177,15 @@ def make_salt():
 
 
 def make_pw_hash(name, pw, salt):
-    h = hashlib.sha256(name + pw + salt).hexdigest()
-    return '%s,%s' % (h, salt)
+    return hashlib.sha256(name + pw + salt).hexdigest()
 
 
-def valid_pw(name, pw, h):
-    salt = h.split(",")[1]
-    return h == make_pw_hash(name, pw, salt)
+def valid_pw(name, pw):
+    user = User.all().filter('username =', name).get()
+    if user:
+        salt = user.salt
+        if user.hash == make_pw_hash(name, pw, salt):
+            return user
 
 
 # Validate entries
@@ -203,6 +217,7 @@ def valid_email(email):
 app = webapp2.WSGIApplication([('/', MainPage),
                                ('/signup', Signup),
                                ('/welcome', Welcome),
-                               ('/logout', Logout)
+                               ('/logout', Logout),
+                               ('/login', Login)
                                ],
                               debug=True)
