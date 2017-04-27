@@ -14,7 +14,8 @@ template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir),
                                autoescape=True)
 
-SECRET = "we haVe Always Lived in the CasTle!<3"
+SECRET = "we-haVe_Always#Lived+in@the=CasTle!<3"
+
 
 def render_str(template, **params):
     t = jinja_env.get_template(template)
@@ -27,6 +28,12 @@ class BlogHandler(webapp2.RequestHandler):
 
     def render(self, template, **kw):
         self.write(render_str(template, **kw))
+
+    def set_cookie(self, id):
+        pass
+
+    def get_cookie(self):
+        pass
 
 """    def initialize(self, *a, **kw):
         webapp2.RequestHandler.initialize(self, *a, **kw)
@@ -67,7 +74,7 @@ class Signup(BlogHandler):
             params['error_username'] = "That's not a valid username."
             have_error = True
 
-        if not unique_username(self.username):
+        if is_username_exist(self.username):
             params['error_username'] = "Such name already exists."
             have_error = True
 
@@ -93,6 +100,7 @@ class Signup(BlogHandler):
             new_user = User(username=self.username, hash=pw_hash, salt=salt)
             new_user.put()
             # set cookie and redirect
+            # new_post.key().id()
             self.redirect("/welcome")
 
 
@@ -165,13 +173,11 @@ def valid_username(username):
     return username and USER_RE.match(username)
 
 
-def unique_username(name):
+def is_username_exist(name):
     users = db.GqlQuery("SELECT * FROM User")
     for user in users:
-        print(user.username)
         if user.username == name:
-            return False
-    return name
+            return name
 
 
 def valid_password(password):
