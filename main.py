@@ -46,13 +46,14 @@ class BlogHandler(webapp2.RequestHandler):
         webapp2.RequestHandler.initialize(self, *a, **kw)
         uid = self.read_secure_cookie('user_id')
         self.user = uid and User.get_by_id(int(uid))
-        self.username = self.user.username
+        if self.user:
+            self.username = self.user.username
 
 
 class MainPage(BlogHandler):
     def get(self):
         """ Show 10 newest posts"""
-        self.write('Hello Blog')
+        self.render("main.html")
 
 
 class NewPost(BlogHandler):
@@ -118,7 +119,9 @@ class Login(BlogHandler):
 
 
 class Logout(BlogHandler):
-    pass
+    def get(self):
+        self.response.headers.add_header('Set-Cookie', 'user_id=; Path=/')
+        self.redirect("/")
 
 
 class Welcome(BlogHandler):
@@ -199,6 +202,7 @@ def valid_email(email):
 # Routing
 app = webapp2.WSGIApplication([('/', MainPage),
                                ('/signup', Signup),
-                               ('/welcome', Welcome)
+                               ('/welcome', Welcome),
+                               ('/logout', Logout)
                                ],
                               debug=True)

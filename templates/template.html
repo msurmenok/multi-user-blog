@@ -12,10 +12,12 @@
     <nav>
         <ul>
         {% if user: %}
-            <li>Logout</li>
+            <li><a href="#">New Post</a></li>
+            <li><a href="#">{{ user.username }}</a></li>
+            <li><a href="/logout">Log out</a></li>
         {% else: %}
-            <li>Log in</li>
-            <li>Sign up</li>
+            <li><a href="#">Log in</a></li>
+            <li><a href="/signup">Sign up</a></li>
         </ul>
         {% endif %}
     </nav>
