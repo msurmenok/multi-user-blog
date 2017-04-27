@@ -17,9 +17,7 @@ jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir),
 SECRET = "we-haVe_Always#Lived+in@the=CasTle!<3"
 
 
-def render_str(template, **params):
-    t = jinja_env.get_template(template)
-    return t.render(params)
+
 
 
 class BlogHandler(webapp2.RequestHandler):
@@ -27,18 +25,28 @@ class BlogHandler(webapp2.RequestHandler):
         self.response.out.write(*a, **kw)
 
     def render(self, template, **kw):
-        self.write(render_str(template, **kw))
+        self.write(self.render_str(template, **kw))
 
-    def set_cookie(self, id):
-        pass
+    def render_str(self, template, **params):
+        t = jinja_env.get_template(template)
+        params["user"] = self.user
+        return t.render(params)
 
-    def get_cookie(self):
-        pass
+    def set_secure_cookie(self, name, val):
+        cookie_val = make_secure_val(val)
+        self.response.headers.add_header(
+            'Set-Cookie',
+            '%s=%s; Path=/' % (name, cookie_val))
 
-"""    def initialize(self, *a, **kw):
+    def read_secure_cookie(self, name):
+        cookie_val = self.request.cookies.get(name)
+        return cookie_val and check_secure_val(cookie_val)
+
+    def initialize(self, *a, **kw):
         webapp2.RequestHandler.initialize(self, *a, **kw)
         uid = self.read_secure_cookie('user_id')
-        self.user = uid and User.by_id(int(uid))"""
+        self.user = uid and User.get_by_id(int(uid))
+        self.username = self.user.username
 
 
 class MainPage(BlogHandler):
@@ -62,31 +70,31 @@ class Signup(BlogHandler):
 
     def post(self):
         have_error = False
-        self.username = self.request.get('username')
-        self.password = self.request.get('password')
-        self.verify = self.request.get('verify')
-        self.email = self.request.get('email')
+        input_username = self.request.get('username')
+        input_password = self.request.get('password')
+        input_verify = self.request.get('verify')
+        input_email = self.request.get('email')
 
-        params = dict(username=self.username,
-                      email=self.email)
+        params = dict(username=input_username,
+                      email=input_email)
 
-        if not valid_username(self.username):
+        if not valid_username(input_username):
             params['error_username'] = "That's not a valid username."
             have_error = True
 
-        if is_username_exist(self.username):
+        if is_username_exist(input_username):
             params['error_username'] = "Such name already exists."
             have_error = True
 
-        if not valid_password(self.password):
+        if not valid_password(input_password):
             params['error_password'] = "That wasn't a valid password."
             have_error = True
 
-        elif self.password != self.verify:
+        elif input_password != input_verify:
             params['error_verify'] = "Your passwords didn't match."
             have_error = True
 
-        if not valid_email(self.email):
+        if not valid_email(input_email):
             params['error_email'] = "That's not a valid email."
             have_error = True
 
@@ -96,11 +104,11 @@ class Signup(BlogHandler):
             # write name to db
             # redirect to welcome page
             salt = make_salt()
-            pw_hash = make_pw_hash(self.username, self.password, salt)
-            new_user = User(username=self.username, hash=pw_hash, salt=salt)
+            pw_hash = make_pw_hash(input_username, input_password, salt)
+            new_user = User(username=input_username, hash=pw_hash, salt=salt)
             new_user.put()
             # set cookie and redirect
-            # new_post.key().id()
+            self.set_secure_cookie("user_id", str(new_user.key().id()))
             self.redirect("/welcome")
 
 
@@ -115,7 +123,7 @@ class Logout(BlogHandler):
 
 class Welcome(BlogHandler):
     def get(self):
-        self.render("welcome.html")
+        self.render("welcome.html", username=self.username)
 
 
 # DB ENTITIES

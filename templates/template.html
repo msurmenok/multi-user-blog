@@ -9,7 +9,16 @@
 <body>
     <header>
     </header>
-    <nav></nav>
+    <nav>
+        <ul>
+        {% if user: %}
+            <li>Logout</li>
+        {% else: %}
+            <li>Log in</li>
+            <li>Sign up</li>
+        </ul>
+        {% endif %}
+    </nav>
     <div id="content">
     {% block content %}
     {% endblock %}
