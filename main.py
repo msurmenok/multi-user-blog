@@ -45,6 +45,7 @@ class BlogHandler(webapp2.RequestHandler):
         uid = self.read_secure_cookie('user_id')
         self.user = uid and User.get_by_id(int(uid))
         if self.user:
+            self.user_id = self.user.key().id()
             self.username = self.user.username
 
 
@@ -121,7 +122,7 @@ class Login(BlogHandler):
         input_password = self.request.get('password')
         user = valid_pw(input_username, input_password)
         if user:
-            self.set_secure_cookie("user_id", str(user.key().id()))
+            self.set_secure_cookie("user_id", str(self.user_id))
             self.redirect("/welcome")
             pass
         else:
@@ -133,12 +134,15 @@ class Login(BlogHandler):
 class Logout(BlogHandler):
     def get(self):
         self.response.headers.add_header('Set-Cookie', 'user_id=; Path=/')
-        self.redirect("/")
+        self.redirect("/signup")
 
 
 class Welcome(BlogHandler):
     def get(self):
-        self.render("welcome.html", username=self.username)
+        if self.user:
+            self.render("welcome.html", username=self.username)
+        else:
+            self.redirect("/signup")
 
 
 # DB ENTITIES

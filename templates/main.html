@@ -1,5 +1,13 @@
 {% extends "template.html" %}
 
 {% block content %}
-    <h1>Ten Newest Posts are here!</h1>
+    <h1>Welcome to our Blog!</h1>
+    <h2>Top 10 newest posts</h2>
+    {% for post in posts %}
+    <div>
+        <h3>{{ post.title }}</h3>
+        <p>{{ post.post | safe }}</p>
+    </div>
+    <hr>
+{% endfor %}
 {% endblock %}

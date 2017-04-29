@@ -1,0 +1,20 @@
+{% extends "template.html" %}
+
+{% block content %}
+	<h1>Create a New Blog Post</h1>
+	<form method="post">
+	<label>
+		<div>Subject:</div>
+		<input type="text" name="subject" value="{{ subject }}">
+	</label>
+	<br>
+	<label>
+		<div>Text:</div>
+		<textarea name="content">{{ content }}</textarea>
+	</label>
+	<br>
+	<input type="submit">
+	</form>
+	<div class="error">{{ error }}</div>
+{% endfor %}
+{% endblock %}
