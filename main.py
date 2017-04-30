@@ -29,6 +29,8 @@ class BlogHandler(webapp2.RequestHandler):
     def render_str(self, template, **params):
         t = jinja_env.get_template(template)
         params["user"] = self.user
+        if self.user:
+            params["user_id"] = self.user.key().id()
         return t.render(params)
 
     def set_secure_cookie(self, name, val):
@@ -91,13 +93,52 @@ class NewPost(BlogHandler):
     pass
 
 
+class EditPost(BlogHandler):
+    def get(self):
+        post_id = int(self.request.get("post_id"))
+        post = BlogPost.get_by_id(post_id)
+        if self.user_id and self.user_id == post.author_id:
+            subject = post.title
+            content = post.content
+            self.render("edit_post.html", subject=subject, content=content, post_id=post_id)
+        else:
+            self.write("Only author can edit his/her own post!")
+
+    def post(self):
+        subject = self.request.get("subject")
+        content = self.request.get("content")
+        post_id = int(self.request.get("post_id"))
+        if subject and content and post_id:
+            # write to db
+            post = BlogPost.get_by_id(post_id)
+            post.title = subject
+            post.content = content
+            post.put()
+            self.redirect("/" + str(post_id))
+        else:
+            error = "Fill all fields"
+            self.render_form(subject, content, error)
+
+
+class DeletePost(BlogHandler):
+    def get(self):
+        post_id = int(self.request.get("post_id"))
+        post = BlogPost.get_by_id(post_id)
+        if self.user_id and self.user_id == post.author_id:
+            post.delete()
+            self.redirect("/")
+        else:
+            self.write("Only author can delete his/her own post!")
+
+
 class ViewPost(BlogHandler):
     def get(self, post_id):
         blog_post = BlogPost.get_by_id(int(post_id))
-        author = User.get_by_id(blog_post.author_id).username
-        subject = blog_post.title
-        content = blog_post.content
-        self.render("view_post.html", author=author, subject=subject, content=content)
+        if blog_post:
+            author = User.get_by_id(blog_post.author_id).username
+            self.render("view_post.html", author=author, post=blog_post, post_id=post_id)
+        else:
+            self.redirect("/")
 
 
 class Signup(BlogHandler):
@@ -260,6 +301,8 @@ app = webapp2.WSGIApplication([('/', MainPage),
                                ('/logout', Logout),
                                ('/login', Login),
                                ('/newpost', NewPost),
-                               ('/(\d+)', ViewPost)
+                               ('/(\d+)', ViewPost),
+                               ('/delete', DeletePost),
+                               ('/edit', EditPost)
                                ],
                               debug=True)
