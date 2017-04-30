@@ -1,7 +1,7 @@
 {% extends "template.html" %}
 
 {% block content %}
-	<h1>{{ subject }}</h1>
+	<h2>{{ subject }}</h2>
+	<em>by {{ author }}</em>
 	<p>{{ content | safe }}</p>
-{% endfor %}
 {% endblock %}

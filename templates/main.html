@@ -3,11 +3,12 @@
 {% block content %}
     <h1>Welcome to our Blog!</h1>
     <h2>Top 10 newest posts</h2>
-    {% for post in posts %}
-    <div>
-        <h3>{{ post.title }}</h3>
-        <p>{{ post.post | safe }}</p>
-    </div>
-    <hr>
-{% endfor %}
+    {% for entry in posts %}
+        <div>
+            <h3><a href="/{{ entry.post.key().id() }}">{{ entry.post.title }}</a></h3>
+            <em>{{ entry.author }}</em>
+            <p>{{ entry.post.content | safe }}</p>
+        </div>
+        <hr>
+    {% endfor %}
 {% endblock %}

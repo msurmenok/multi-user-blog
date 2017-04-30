@@ -11,8 +11,9 @@
     </header>
     <nav>
         <ul>
+            <li><a href="/">Home</a> </li>
         {% if user: %}
-            <li><a href="#">New Post</a></li>
+            <li><a href="/newpost">New Post</a></li>
             <li><a href="#">{{ user.username }}</a></li>
             <li><a href="/logout">Log out</a></li>
         {% else: %}

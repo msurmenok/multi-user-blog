@@ -4,6 +4,7 @@ import random
 import hashlib
 import hmac
 import string
+from collections import namedtuple
 
 import webapp2
 import jinja2
@@ -51,17 +52,52 @@ class BlogHandler(webapp2.RequestHandler):
 
 class MainPage(BlogHandler):
     def get(self):
-        """ Show 10 newest posts"""
-        self.render("main.html")
+        blog_posts = db.GqlQuery("SELECT * FROM BlogPost ORDER BY created DESC LIMIT 10")
+        Post = namedtuple('Post', 'author post')
+        posts = []
+        for post in blog_posts:
+            author_name = User.get_by_id(post.author_id).username
+            posts.append(Post(author=author_name, post=post))
+        self.render("main.html", posts=posts)
 
 
 class NewPost(BlogHandler):
     # if not logged in -> redirect to login page
+    def render_form(self, subject="", content="", error=""):
+        if self.user:
+            self.render("create_post.html", subject=subject, content=content, error=error)
+        else:
+            self.redirect("/login")
+
+    # the form input boxes must have the names 'subject' and 'content'
+    def get(self):
+        self.render_form()
+
+    #  After submitting a blog post, I ask you to redirect to a permalink for that post.
+    # The URL format might look something like this: /blog/1001,
+    # where 1001 is the ID of the post you just submitted.
+    def post(self):
+        subject = self.request.get("subject")
+        content = self.request.get("content")
+
+        if subject and content:
+            # write to db
+            new_post = BlogPost(title=subject, content=content, author_id=self.user_id)
+            new_post.put()
+            self.redirect("/" + str(new_post.key().id()))
+        else:
+            error = "Fill all fields"
+            self.render_form(subject, content, error)
     pass
 
 
 class ViewPost(BlogHandler):
-    pass
+    def get(self, post_id):
+        blog_post = BlogPost.get_by_id(int(post_id))
+        author = User.get_by_id(blog_post.author_id).username
+        subject = blog_post.title
+        content = blog_post.content
+        self.render("view_post.html", author=author, subject=subject, content=content)
 
 
 class Signup(BlogHandler):
@@ -122,7 +158,7 @@ class Login(BlogHandler):
         input_password = self.request.get('password')
         user = valid_pw(input_username, input_password)
         if user:
-            self.set_secure_cookie("user_id", str(self.user_id))
+            self.set_secure_cookie("user_id", str(user.key().id()))
             self.redirect("/welcome")
             pass
         else:
@@ -222,6 +258,8 @@ app = webapp2.WSGIApplication([('/', MainPage),
                                ('/signup', Signup),
                                ('/welcome', Welcome),
                                ('/logout', Logout),
-                               ('/login', Login)
+                               ('/login', Login),
+                               ('/newpost', NewPost),
+                               ('/(\d+)', ViewPost)
                                ],
                               debug=True)
