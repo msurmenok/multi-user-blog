@@ -55,11 +55,17 @@ class BlogHandler(webapp2.RequestHandler):
 class MainPage(BlogHandler):
     def get(self):
         blog_posts = db.GqlQuery("SELECT * FROM BlogPost ORDER BY created DESC LIMIT 10")
-        Post = namedtuple('Post', 'author post')
+        Post = namedtuple('Post', 'author post like_counter was_liked')
         posts = []
         for post in blog_posts:
             author_name = User.get_by_id(post.author_id).username
-            posts.append(Post(author=author_name, post=post))
+            likes = db.GqlQuery("SELECT * FROM Like WHERE post_id = %s" % post.key().id())
+            like_counter = len(list(likes))
+            liker_ids = [like.user_id for like in likes]
+            was_liked = False
+            if self.user and self.user_id != post.author_id and self.user_id in liker_ids:
+                was_liked = True
+            posts.append(Post(author=author_name, post=post, like_counter=like_counter, was_liked=was_liked))
         self.render("main.html", posts=posts)
 
 
@@ -222,6 +228,19 @@ class Welcome(BlogHandler):
             self.redirect("/signup")
 
 
+class LikePost(BlogHandler):
+    def get(self):
+        post_id = int(self.request.get("post_id"))
+        post = BlogPost.get_by_id(post_id)
+        # get all likes from Like
+        likes = db.GqlQuery("SELECT * FROM Like WHERE post_id = %s" % post_id)
+        liker_ids = [like.user_id for like in likes]
+        if self.user and self.user_id != post.author_id and self.user_id not in liker_ids:
+            new_like = Like(user_id=self.user_id, post_id=post_id)
+            new_like.put()
+        self.redirect("/?something=nothing")
+
+
 # DB ENTITIES
 class BlogPost(db.Model):
     title = db.StringProperty(required=True)
@@ -235,6 +254,11 @@ class User(db.Model):
     username = db.StringProperty(required=True)
     hash = db.StringProperty(required=True)
     salt = db.StringProperty(required=True)
+
+
+class Like(db.Model):
+    user_id = db.IntegerProperty(required=True)
+    post_id = db.IntegerProperty(required=True)
 
 
 # Cookie security
@@ -303,6 +327,7 @@ app = webapp2.WSGIApplication([('/', MainPage),
                                ('/newpost', NewPost),
                                ('/(\d+)', ViewPost),
                                ('/delete', DeletePost),
-                               ('/edit', EditPost)
+                               ('/edit', EditPost),
+                               ('/like', LikePost)
                                ],
                               debug=True)

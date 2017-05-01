@@ -8,6 +8,21 @@
             <h3><a href="/{{ entry.post.key().id() }}">{{ entry.post.title }}</a></h3>
             <em>{{ entry.author }}</em>
             <p>{{ entry.post.content | safe }}</p>
+            {% if user: %}
+            <a href="/like?post_id={{ entry.post.key().id()}}">
+                {% if entry.was_liked:%}
+                    Liked&nbsp;
+                {% else %}
+                    Like&nbsp;
+                {% endif %}
+                <span>{{ entry.like_counter }}</span>
+            </a>
+            {% else: %}
+            <p>
+                Like&nbsp;
+                <span>{{ entry.like_counter }}</span>
+            </p>
+            {% endif %}
         </div>
         <hr>
     {% endfor %}
