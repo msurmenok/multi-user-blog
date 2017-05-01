@@ -235,14 +235,18 @@ class LikePost(BlogHandler):
         post = BlogPost.get_by_id(post_id)
         likes = Like.all().filter("post_id =", post_id)
         liker_ids = [like.user_id for like in likes]
-        if self.user and self.user_id != post.author_id:
-            if self.user_id in liker_ids:
+        if not self.user:
+            self.redirect("/login")
+        if self.user:
+            if self.user_id != post.author_id:
+                pass
+            elif self.user_id in liker_ids:
                 like_to_delete = likes.filter("user_id =", self.user_id).get()
                 like_to_delete.delete()
             else:
                 new_like = Like(user_id=self.user_id, post_id=post_id)
                 new_like.put()
-        self.redirect("/?liked=True")
+            self.redirect("/")
 
 
 # DB ENTITIES
