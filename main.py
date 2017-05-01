@@ -54,12 +54,13 @@ class BlogHandler(webapp2.RequestHandler):
 
 class MainPage(BlogHandler):
     def get(self):
-        blog_posts = db.GqlQuery("SELECT * FROM BlogPost ORDER BY created DESC LIMIT 10")
+        blog_posts = BlogPost.all().order('-created')
         Post = namedtuple('Post', 'author post like_counter was_liked')
         posts = []
         for post in blog_posts:
             author_name = User.get_by_id(post.author_id).username
-            likes = db.GqlQuery("SELECT * FROM Like WHERE post_id = %s" % post.key().id())
+            # likes = db.GqlQuery("SELECT * FROM Like WHERE post_id = %s" % post.key().id())
+            likes = Like.all().filter("post_id =", post.key().id())
             like_counter = len(list(likes))
             liker_ids = [like.user_id for like in likes]
             was_liked = False
@@ -232,13 +233,16 @@ class LikePost(BlogHandler):
     def get(self):
         post_id = int(self.request.get("post_id"))
         post = BlogPost.get_by_id(post_id)
-        # get all likes from Like
-        likes = db.GqlQuery("SELECT * FROM Like WHERE post_id = %s" % post_id)
+        likes = Like.all().filter("post_id =", post_id)
         liker_ids = [like.user_id for like in likes]
-        if self.user and self.user_id != post.author_id and self.user_id not in liker_ids:
-            new_like = Like(user_id=self.user_id, post_id=post_id)
-            new_like.put()
-        self.redirect("/?something=nothing")
+        if self.user and self.user_id != post.author_id:
+            if self.user_id in liker_ids:
+                like_to_delete = likes.filter("user_id =", self.user_id).get()
+                like_to_delete.delete()
+            else:
+                new_like = Like(user_id=self.user_id, post_id=post_id)
+                new_like.put()
+        self.redirect("/?liked=True")
 
 
 # DB ENTITIES
