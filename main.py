@@ -5,6 +5,7 @@ import hashlib
 import hmac
 import string
 from collections import namedtuple
+from time import sleep
 
 import webapp2
 import jinja2
@@ -133,6 +134,7 @@ class DeletePost(BlogHandler):
         post = BlogPost.get_by_id(post_id)
         if self.user_id and self.user_id == post.author_id:
             post.delete()
+            sleep(0.1)
             self.redirect("/")
         else:
             self.write("Only author can delete his/her own post!")
@@ -239,13 +241,13 @@ class LikePost(BlogHandler):
             self.redirect("/login")
         if self.user:
             if self.user_id != post.author_id:
-                pass
-            elif self.user_id in liker_ids:
-                like_to_delete = likes.filter("user_id =", self.user_id).get()
-                like_to_delete.delete()
-            else:
-                new_like = Like(user_id=self.user_id, post_id=post_id)
-                new_like.put()
+                if self.user_id in liker_ids:
+                    like_to_delete = likes.filter("user_id =", self.user_id).get()
+                    like_to_delete.delete()
+                else:
+                    new_like = Like(user_id=self.user_id, post_id=post_id)
+                    new_like.put()
+            sleep(0.1)
             self.redirect("/")
 
 
