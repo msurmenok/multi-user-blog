@@ -142,10 +142,17 @@ class DeletePost(BlogHandler):
 
 class ViewPost(BlogHandler):
     def get(self, post_id):
-        blog_post = BlogPost.get_by_id(int(post_id))
-        if blog_post:
-            author = User.get_by_id(blog_post.author_id).username
-            self.render("view_post.html", author=author, post=blog_post, post_id=post_id)
+        post = BlogPost.get_by_id(int(post_id))
+        if post:
+            likes = Like.all().filter("post_id =", post.key().id())
+            like_counter = len(list(likes))
+            liker_ids = [like.user_id for like in likes]
+            was_liked = False
+            if self.user and self.user_id != post.author_id and self.user_id in liker_ids:
+                was_liked = True
+            author = User.get_by_id(post.author_id).username
+            self.render("view_post.html", author=author, post=post, post_id=post_id,
+                        like_counter=like_counter, was_liked=was_liked)
         else:
             self.redirect("/")
 
@@ -234,6 +241,7 @@ class Welcome(BlogHandler):
 class LikePost(BlogHandler):
     def get(self):
         post_id = int(self.request.get("post_id"))
+        source = self.request.get("source")
         post = BlogPost.get_by_id(post_id)
         likes = Like.all().filter("post_id =", post_id)
         liker_ids = [like.user_id for like in likes]
@@ -248,7 +256,7 @@ class LikePost(BlogHandler):
                     new_like = Like(user_id=self.user_id, post_id=post_id)
                     new_like.put()
             sleep(0.1)
-            self.redirect("/")
+            self.redirect("/" + source)
 
 
 # DB ENTITIES

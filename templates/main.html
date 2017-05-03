@@ -8,7 +8,7 @@
             <h3><a href="/{{ entry.post.key().id() }}">{{ entry.post.title }}</a></h3>
             <em>{{ entry.author }}</em>
             <p>{{ entry.post.content | safe }}</p>
-            <a href="/like?post_id={{ entry.post.key().id()}}">
+            <a href="/like?post_id={{ entry.post.key().id()}}&source=">
                 {% if entry.was_liked:%}
                     Liked&nbsp;
                 {% else: %}

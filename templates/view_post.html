@@ -10,4 +10,12 @@
 	<h2>{{ post.title }}</h2>
 	<em>by {{ author }}</em>
 	<p>{{ post.content | safe }}</p>
+	<a href="/like?post_id={{ post_id }}&source={{ post_id }}">
+		{% if was_liked:%}
+			Liked&nbsp;
+		{% else: %}
+			Like&nbsp;
+		{% endif %}
+		<span>{{ like_counter }}</span>
+	</a>
 {% endblock %}
