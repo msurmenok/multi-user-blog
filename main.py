@@ -53,21 +53,34 @@ class BlogHandler(webapp2.RequestHandler):
             self.username = self.user.username
 
 
+def get_name_by_id(user_id):
+    return User.get_by_id(user_id).username
+
+
+def get_all_likes(post_id):
+    """Return all likes for certain blog post"""
+    return Like.all().filter("post_id =", post_id)
+
+
+def get_all_comments(post_id):
+    """Return all comments for certain blog post"""
+    pass
+
+
 class MainPage(BlogHandler):
     def get(self):
         blog_posts = BlogPost.all().order('-created')
         Post = namedtuple('Post', 'author post like_counter was_liked')
         posts = []
         for post in blog_posts:
-            author_name = User.get_by_id(post.author_id).username
-            # likes = db.GqlQuery("SELECT * FROM Like WHERE post_id = %s" % post.key().id())
-            likes = Like.all().filter("post_id =", post.key().id())
+            author = get_name_by_id(post.author_id)
+            likes = get_all_likes(post.key().id())
             like_counter = len(list(likes))
             liker_ids = [like.user_id for like in likes]
             was_liked = False
             if self.user and self.user_id != post.author_id and self.user_id in liker_ids:
                 was_liked = True
-            posts.append(Post(author=author_name, post=post, like_counter=like_counter, was_liked=was_liked))
+            posts.append(Post(author=author, post=post, like_counter=like_counter, was_liked=was_liked))
         self.render("main.html", posts=posts)
 
 
@@ -144,13 +157,13 @@ class ViewPost(BlogHandler):
     def get(self, post_id):
         post = BlogPost.get_by_id(int(post_id))
         if post:
-            likes = Like.all().filter("post_id =", post.key().id())
+            likes = get_all_likes(post.key().id())
             like_counter = len(list(likes))
             liker_ids = [like.user_id for like in likes]
             was_liked = False
             if self.user and self.user_id != post.author_id and self.user_id in liker_ids:
                 was_liked = True
-            author = User.get_by_id(post.author_id).username
+            author = get_name_by_id(post.author_id)
             self.render("view_post.html", author=author, post=post, post_id=post_id,
                         like_counter=like_counter, was_liked=was_liked)
         else:
@@ -259,6 +272,11 @@ class LikePost(BlogHandler):
             self.redirect("/" + source)
 
 
+class CommentPost(BlogHandler):
+    def post(self):
+        pass
+
+
 # DB ENTITIES
 class BlogPost(db.Model):
     title = db.StringProperty(required=True)
@@ -277,6 +295,13 @@ class User(db.Model):
 class Like(db.Model):
     user_id = db.IntegerProperty(required=True)
     post_id = db.IntegerProperty(required=True)
+
+
+class Comment(db.Model):
+    content = db.TextProperty(required=True)
+    user_id = db.IntegerProperty(required=True)
+    created = db.DateTimeProperty(auto_now_add=True)
+    last_modified = db.DateTimeProperty(auto_now=True)
 
 
 # Cookie security
