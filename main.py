@@ -64,13 +64,17 @@ def get_all_likes(post_id):
 
 def get_all_comments(post_id):
     """Return all comments for certain blog post"""
+    return Comment.all().filter("post_id=", post_id).order("-created")
     pass
+
+Post = namedtuple('Post', 'author post like_counter was_liked')
+Comm = namedtuple('Comm', "author comment")
 
 
 class MainPage(BlogHandler):
     def get(self):
         blog_posts = BlogPost.all().order('-created')
-        Post = namedtuple('Post', 'author post like_counter was_liked')
+
         posts = []
         for post in blog_posts:
             author = get_name_by_id(post.author_id)
@@ -157,6 +161,12 @@ class ViewPost(BlogHandler):
     def get(self, post_id):
         post = BlogPost.get_by_id(int(post_id))
         if post:
+            raw_comments = get_all_comments(post_id)
+            comments = []
+            for comment in raw_comments:
+                author = get_name_by_id(comment.user_id)
+                comments.append(Comm(author=author, comment=comment))
+
             likes = get_all_likes(post.key().id())
             like_counter = len(list(likes))
             liker_ids = [like.user_id for like in likes]
@@ -165,7 +175,7 @@ class ViewPost(BlogHandler):
                 was_liked = True
             author = get_name_by_id(post.author_id)
             self.render("view_post.html", author=author, post=post, post_id=post_id,
-                        like_counter=like_counter, was_liked=was_liked)
+                        like_counter=like_counter, was_liked=was_liked, comments=comments)
         else:
             self.redirect("/")
 
@@ -272,7 +282,18 @@ class LikePost(BlogHandler):
             self.redirect("/" + source)
 
 
-class CommentPost(BlogHandler):
+class AddComment(BlogHandler):
+    def get(self):
+        pass
+
+    def post(self):
+        pass
+
+
+class EditComment(BlogHandler):
+    def get(self):
+        pass
+
     def post(self):
         pass
 

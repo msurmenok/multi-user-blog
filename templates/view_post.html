@@ -18,4 +18,12 @@
 		{% endif %}
 		<span>{{ like_counter }}</span>
 	</a>
+	<section class="comments">
+		{% for entry in comments: %}
+		<div>
+			<em>{{ entry.author }}</em>
+			<p>{{ entry.comment.content }}</p>
+		</div>
+		{% endfor %}
+	</section>
 {% endblock %}
