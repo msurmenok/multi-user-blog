@@ -18,12 +18,25 @@
 		{% endif %}
 		<span>{{ like_counter }}</span>
 	</a>
+	<hr>
+	<section class="new_comment">
+		<form method="post">
+			<label>Leave your comment</label>
+			<br>
+			<textarea name="content">{{ content }}</textarea>
+			<input type="submit">
+		</form>
+		<div class="error">{{ error }}</div>
+	</section>
+	<hr>
 	<section class="comments">
 		{% for entry in comments: %}
 		<div>
 			<em>{{ entry.author }}</em>
+			<em>{{ entry.comment.created|datetimeformat }}</em>
 			<p>{{ entry.comment.content }}</p>
 		</div>
+		<hr>
 		{% endfor %}
 	</section>
 {% endblock %}

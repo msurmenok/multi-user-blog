@@ -17,6 +17,12 @@ jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir),
                                autoescape=True)
 
 
+def datetimeformat(value, format='%d %B %Y, %H:%M:%S'):
+    return value.strftime(format)
+
+jinja_env.filters['datetimeformat'] = datetimeformat
+
+
 SECRET = "we-haVe_Always#Lived+in@the=CasTle!<3"
 
 
@@ -64,8 +70,14 @@ def get_all_likes(post_id):
 
 def get_all_comments(post_id):
     """Return all comments for certain blog post"""
-    return Comment.all().filter("post_id=", post_id).order("-created")
+    return Comment.all().filter("post_id =", post_id).order("-created")
     pass
+
+
+def write_comment(user_id, post_id, content):
+    new_comment = Comment(user_id=user_id, post_id=post_id, content=content)
+    new_comment.put()
+
 
 Post = namedtuple('Post', 'author post like_counter was_liked')
 Comm = namedtuple('Comm', "author comment")
@@ -158,8 +170,8 @@ class DeletePost(BlogHandler):
 
 
 class ViewPost(BlogHandler):
-    def get(self, post_id):
-        post = BlogPost.get_by_id(int(post_id))
+    def render_post(self, post_id, error=""):
+        post = BlogPost.get_by_id(post_id)
         if post:
             raw_comments = get_all_comments(post_id)
             comments = []
@@ -175,9 +187,28 @@ class ViewPost(BlogHandler):
                 was_liked = True
             author = get_name_by_id(post.author_id)
             self.render("view_post.html", author=author, post=post, post_id=post_id,
-                        like_counter=like_counter, was_liked=was_liked, comments=comments)
+                        like_counter=like_counter, was_liked=was_liked,
+                        comments=comments, error=error)
         else:
             self.redirect("/")
+
+    def get(self, post_id):
+        post_id = int(post_id)
+        self.render_post(post_id)
+
+    def post(self, post_id):
+        post_id = int(post_id)
+        if self.user_id:
+            content = self.request.get("content")
+            error = "Write your comment"
+            if content:
+                write_comment(user_id=self.user_id, post_id=post_id, content=content)
+                sleep(0.1)
+                self.redirect("/%s" % post_id)
+            else:
+                self.render_post(post_id=post_id, error=error)
+        else:
+            self.redirect("/login")
 
 
 class Signup(BlogHandler):
@@ -282,14 +313,6 @@ class LikePost(BlogHandler):
             self.redirect("/" + source)
 
 
-class AddComment(BlogHandler):
-    def get(self):
-        pass
-
-    def post(self):
-        pass
-
-
 class EditComment(BlogHandler):
     def get(self):
         pass
@@ -321,6 +344,7 @@ class Like(db.Model):
 class Comment(db.Model):
     content = db.TextProperty(required=True)
     user_id = db.IntegerProperty(required=True)
+    post_id = db.IntegerProperty(required=True)
     created = db.DateTimeProperty(auto_now_add=True)
     last_modified = db.DateTimeProperty(auto_now=True)
 
