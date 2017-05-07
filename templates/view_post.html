@@ -3,8 +3,8 @@
 {% block content %}
 	{% if user_id and user_id == post.author_id %}
 	<ul>
-		<li><a href="/edit?post_id={{ post_id }}">Edit</a></li>
-		<li><a href="/delete?post_id={{ post_id }}">Delete</a></li>
+		<li><a href="/editpost?post_id={{ post_id }}">Edit</a></li>
+		<li><a href="/deletepost?post_id={{ post_id }}">Delete</a></li>
 	</ul>
 	{% endif %}
 	<h2>{{ post.title }}</h2>
@@ -32,9 +32,15 @@
 	<section class="comments">
 		{% for entry in comments: %}
 		<div>
-			<em>{{ entry.author }}</em>
+			<em><strong>{{ entry.author }}</strong></em>
 			<em>{{ entry.comment.created|datetimeformat }}</em>
 			<p>{{ entry.comment.content }}</p>
+			{% if user_id and user_id == entry.comment.user_id: %}
+			<ul>
+				<li><a href="/editcomment?comment_id={{ entry.comment_id }}">Edit</a></li>
+				<li><a href="/deletecomment?comment_id={{ entry.comment_id }}">Delete</a></li>
+			</ul>
+			{% endif %}
 		</div>
 		<hr>
 		{% endfor %}

@@ -68,10 +68,13 @@ def get_all_likes(post_id):
     return Like.all().filter("post_id =", post_id)
 
 
+def get_comment_id(comment):
+    return comment.key().id()
+
+
 def get_all_comments(post_id):
     """Return all comments for certain blog post"""
     return Comment.all().filter("post_id =", post_id).order("-created")
-    pass
 
 
 def write_comment(user_id, post_id, content):
@@ -80,7 +83,7 @@ def write_comment(user_id, post_id, content):
 
 
 Post = namedtuple('Post', 'author post like_counter was_liked')
-Comm = namedtuple('Comm', "author comment")
+Comm = namedtuple('Comm', "author comment comment_id")
 
 
 class MainPage(BlogHandler):
@@ -161,7 +164,7 @@ class DeletePost(BlogHandler):
     def get(self):
         post_id = int(self.request.get("post_id"))
         post = BlogPost.get_by_id(post_id)
-        if self.user_id and self.user_id == post.author_id:
+        if self.user_id and post and self.user_id == post.author_id:
             post.delete()
             sleep(0.1)
             self.redirect("/")
@@ -177,7 +180,7 @@ class ViewPost(BlogHandler):
             comments = []
             for comment in raw_comments:
                 author = get_name_by_id(comment.user_id)
-                comments.append(Comm(author=author, comment=comment))
+                comments.append(Comm(author=author, comment=comment, comment_id=get_comment_id(comment)))
 
             likes = get_all_likes(post.key().id())
             like_counter = len(list(likes))
@@ -315,11 +318,40 @@ class LikePost(BlogHandler):
 
 class EditComment(BlogHandler):
     def get(self):
-        pass
+        comment_id = int(self.request.get("comment_id"))
+        comment = Comment.get_by_id(comment_id)
+        if self.user_id and comment and self.user_id == comment.user_id:
+            content = comment.content
+            self.render("edit_comment.html", content=content, comment_id=comment_id, post_id=comment.post_id)
+        else:
+            self.write("Only author can edit his/her own post!")
 
     def post(self):
-        pass
+        content = self.request.get("content")
+        comment_id = int(self.request.get("comment_id"))
+        if content and comment_id:
+            # write to db
+            comment = Comment.get_by_id(comment_id)
+            comment.content = content
+            comment.put()
+            sleep(0.1)
+            self.redirect("/" + str(comment.post_id))
+        else:
+            error = "Comment can't be empty"
+            self.render_form(content, error)
 
+
+class DeleteComment(BlogHandler):
+    def get(self):
+        comment_id = int(self.request.get("comment_id"))
+        comment = Comment.get_by_id(comment_id)
+        post_id = comment.post_id
+        if self.user_id and comment and self.user_id == comment.user_id:
+            comment.delete()
+            sleep(0.1)
+            self.redirect("/%s" % post_id)
+        else:
+            self.write("Only author can delete his/her own post!")
 
 # DB ENTITIES
 class BlogPost(db.Model):
@@ -414,8 +446,10 @@ app = webapp2.WSGIApplication([('/', MainPage),
                                ('/login', Login),
                                ('/newpost', NewPost),
                                ('/(\d+)', ViewPost),
-                               ('/delete', DeletePost),
-                               ('/edit', EditPost),
-                               ('/like', LikePost)
+                               ('/deletepost', DeletePost),
+                               ('/editpost', EditPost),
+                               ('/like', LikePost),
+                               ('/deletecomment', DeleteComment),
+                               ('/editcomment', EditComment)
                                ],
                               debug=True)
