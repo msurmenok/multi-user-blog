@@ -59,61 +59,7 @@ class BlogHandler(webapp2.RequestHandler):
             self.username = self.user.username
 
 
-# DB calls
-def get_all_posts():
-    return BlogPost.all().order('-created')
 
-
-def create_new_post(title, content, author_id):
-    new_post = BlogPost(title=title, content=content, author_id=author_id)
-    new_post.put()
-    return get_post_id(new_post)
-
-
-def update_post(post_id, title, content):
-    post = get_post_by_id(post_id)
-    if post:
-        post.title = title
-        post.content = content
-        post.put()
-
-
-def delete_post(post_id):
-    post = get_post_by_id(post_id)
-    if post:
-        post.delete()
-
-
-
-def get_name_by_id(user_id):
-    return User.get_by_id(user_id).username
-
-
-def get_all_likes(post_id):
-    """Return all likes for certain blog post"""
-    return Like.all().filter("post_id =", post_id)
-
-
-def get_post_id(post):
-    return post.key().id()
-
-
-def get_post_by_id(post_id):
-    return BlogPost.get_by_id(post_id)
-
-
-def get_comment_id(comment):
-    return comment.key().id()
-
-
-def get_all_comments(post_id):
-    """Return all comments for certain blog post"""
-    return Comment.all().filter("post_id =", post_id).order("-created")
-
-
-def create_comment(user_id, post_id, content):
-    new_comment = Comment(user_id=user_id, post_id=post_id, content=content)
-    new_comment.put()
 
 
 Post = namedtuple('Post', 'author post post_id like_counter was_liked comment_counter')
@@ -161,7 +107,7 @@ class NewPost(BlogHandler):
 
         if subject and content:
             # write to db
-            new_post_id = create_new_post(title=subject, content=content, author_id=self.user_id)
+            new_post_id = create_post(title=subject, content=content, author_id=self.user_id)
             self.redirect("/" + str(new_post_id))
         else:
             error = "Fill all fields"
@@ -291,10 +237,9 @@ class Signup(BlogHandler):
             # redirect to welcome page
             salt = make_salt()
             pw_hash = make_pw_hash(input_username, input_password, salt)
-            new_user = User(username=input_username, hash=pw_hash, salt=salt)
-            new_user.put()
+            new_user_id = str(create_user(username=input_username, pw_hash=pw_hash, salt=salt))
             # set cookie and redirect
-            self.set_secure_cookie("user_id", str(new_user.key().id()))
+            self.set_secure_cookie("user_id", new_user_id)
             self.redirect("/welcome")
 
 
@@ -335,19 +280,17 @@ class LikePost(BlogHandler):
     def get(self):
         post_id = int(self.request.get("post_id"))
         source = self.request.get("source")
-        post = BlogPost.get_by_id(post_id)
-        likes = Like.all().filter("post_id =", post_id)
+        post = get_post_by_id(post_id)
+        likes = get_all_likes(post_id)
         liker_ids = [like.user_id for like in likes]
         if not self.user:
             self.redirect("/login")
         if self.user:
             if self.user_id != post.author_id:
                 if self.user_id in liker_ids:
-                    like_to_delete = likes.filter("user_id =", self.user_id).get()
-                    like_to_delete.delete()
+                    delete_like(self.user_id, likes)
                 else:
-                    new_like = Like(user_id=self.user_id, post_id=post_id)
-                    new_like.put()
+                    create_like(self.user_id, post_id)
             sleep(0.1)
             self.redirect("/" + source)
 
@@ -355,7 +298,7 @@ class LikePost(BlogHandler):
 class EditComment(BlogHandler):
     def get(self):
         comment_id = int(self.request.get("comment_id"))
-        comment = Comment.get_by_id(comment_id)
+        comment = get_comment_by_id(comment_id)
         if self.user_id and comment and self.user_id == comment.user_id:
             content = comment.content
             self.render("edit_comment.html", content=content, comment_id=comment_id, post_id=comment.post_id)
@@ -367,11 +310,9 @@ class EditComment(BlogHandler):
         comment_id = int(self.request.get("comment_id"))
         if content and comment_id:
             # write to db
-            comment = Comment.get_by_id(comment_id)
-            comment.content = content
-            comment.put()
+            update_comment(comment_id, content)
             sleep(0.1)
-            self.redirect("/" + str(comment.post_id))
+            self.redirect("/%s" % get_comment_by_id(comment_id).post_id)
         else:
             error = "Comment can't be empty"
             self.render_form(content, error)
@@ -380,14 +321,15 @@ class EditComment(BlogHandler):
 class DeleteComment(BlogHandler):
     def get(self):
         comment_id = int(self.request.get("comment_id"))
-        comment = Comment.get_by_id(comment_id)
+        comment = get_comment_by_id(comment_id)
         post_id = comment.post_id
         if self.user_id and comment and self.user_id == comment.user_id:
-            comment.delete()
+            delete_comment(comment_id)
             sleep(0.1)
             self.redirect("/%s" % post_id)
         else:
             self.write("Only author can delete his/her own post!")
+
 
 # DB ENTITIES
 class BlogPost(db.Model):
@@ -415,6 +357,103 @@ class Comment(db.Model):
     post_id = db.IntegerProperty(required=True)
     created = db.DateTimeProperty(auto_now_add=True)
     last_modified = db.DateTimeProperty(auto_now=True)
+
+
+# DB calls
+#  User repository
+def get_name_by_id(user_id):
+    return User.get_by_id(user_id).username
+
+
+def create_user(username, pw_hash, salt):
+    new_user = User(username=username, hash=pw_hash, salt=salt)
+    new_user.put()
+    return get_user_id(new_user)
+
+
+def get_user_id(user):
+    return user.key().id()
+
+
+# Post repository
+def get_all_posts():
+    return BlogPost.all().order('-created')
+
+
+def create_post(title, content, author_id):
+    new_post = BlogPost(title=title, content=content, author_id=author_id)
+    new_post.put()
+    return get_post_id(new_post)
+
+
+def update_post(post_id, title, content):
+    post = get_post_by_id(post_id)
+    if post:
+        post.title = title
+        post.content = content
+        post.put()
+
+
+def delete_post(post_id):
+    post = get_post_by_id(post_id)
+    if post:
+        post.delete()
+
+
+def get_post_id(post):
+    return post.key().id()
+
+
+def get_post_by_id(post_id):
+    return BlogPost.get_by_id(post_id)
+
+
+# Like repository
+def create_like(user_id, post_id):
+    new_like = Like(user_id=user_id, post_id=post_id)
+    new_like.put()
+
+
+def delete_like(user_id, likes):
+    like_to_delete = likes.filter("user_id =", user_id).get()
+    like_to_delete.delete()
+
+
+def get_all_likes(post_id):
+    """Return all likes for certain blog post"""
+    return Like.all().filter("post_id =", post_id)
+
+
+# Comment repository
+def get_comment_id(comment):
+    return comment.key().id()
+
+
+def get_all_comments(post_id):
+    """Return all comments for certain blog post"""
+    return Comment.all().filter("post_id =", post_id).order("-created")
+
+
+def create_comment(user_id, post_id, content):
+    new_comment = Comment(user_id=user_id, post_id=post_id, content=content)
+    new_comment.put()
+
+
+def update_comment(comment_id, content):
+    comment = get_comment_by_id(comment_id)
+    if comment:
+        comment.content = content
+        comment.put()
+
+
+def get_comment_by_id(comment_id):
+    return Comment.get_by_id(comment_id)
+
+
+def delete_comment(comment_id):
+    comment = get_comment_by_id(comment_id)
+    if comment:
+        comment.delete()
 
 
 # Cookie security
