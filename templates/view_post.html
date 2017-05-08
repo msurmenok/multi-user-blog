@@ -1,7 +1,7 @@
 {% extends "template.html" %}
 
 {% block content %}
-	{% if user_id and user_id == post.author_id %}
+
 
 	<h2>{{ post.title }}</h2>
 	<em>by {{ author }}</em>
@@ -15,6 +15,7 @@
 		<span>{{ like_counter }}</span>
 	</a>
 	<br>
+	{% if user_id and user_id == post.author_id %}
 	<a href="/editpost?post_id={{ post_id }}">Edit</a>
 	<a href="/deletepost?post_id={{ post_id }}">Delete</a>
 	{% endif %}

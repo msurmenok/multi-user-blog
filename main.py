@@ -59,6 +59,32 @@ class BlogHandler(webapp2.RequestHandler):
             self.username = self.user.username
 
 
+# DB calls
+def get_all_posts():
+    return BlogPost.all().order('-created')
+
+
+def create_new_post(title, content, author_id):
+    new_post = BlogPost(title=title, content=content, author_id=author_id)
+    new_post.put()
+    return get_post_id(new_post)
+
+
+def update_post(post_id, title, content):
+    post = get_post_by_id(post_id)
+    if post:
+        post.title = title
+        post.content = content
+        post.put()
+
+
+def delete_post(post_id):
+    post = get_post_by_id(post_id)
+    if post:
+        post.delete()
+
+
+
 def get_name_by_id(user_id):
     return User.get_by_id(user_id).username
 
@@ -67,8 +93,14 @@ def get_all_likes(post_id):
     """Return all likes for certain blog post"""
     return Like.all().filter("post_id =", post_id)
 
+
 def get_post_id(post):
     return post.key().id()
+
+
+def get_post_by_id(post_id):
+    return BlogPost.get_by_id(post_id)
+
 
 def get_comment_id(comment):
     return comment.key().id()
@@ -79,7 +111,7 @@ def get_all_comments(post_id):
     return Comment.all().filter("post_id =", post_id).order("-created")
 
 
-def write_comment(user_id, post_id, content):
+def create_comment(user_id, post_id, content):
     new_comment = Comment(user_id=user_id, post_id=post_id, content=content)
     new_comment.put()
 
@@ -90,7 +122,7 @@ Comm = namedtuple('Comm', "author comment comment_id")
 
 class MainPage(BlogHandler):
     def get(self):
-        blog_posts = BlogPost.all().order('-created')
+        blog_posts = get_all_posts()
 
         posts = []
         for post in blog_posts:
@@ -120,22 +152,17 @@ class NewPost(BlogHandler):
         else:
             self.redirect("/login")
 
-    # the form input boxes must have the names 'subject' and 'content'
     def get(self):
         self.render_form()
 
-    #  After submitting a blog post, I ask you to redirect to a permalink for that post.
-    # The URL format might look something like this: /blog/1001,
-    # where 1001 is the ID of the post you just submitted.
     def post(self):
         subject = self.request.get("subject")
         content = self.request.get("content")
 
         if subject and content:
             # write to db
-            new_post = BlogPost(title=subject, content=content, author_id=self.user_id)
-            new_post.put()
-            self.redirect("/" + str(new_post.key().id()))
+            new_post_id = create_new_post(title=subject, content=content, author_id=self.user_id)
+            self.redirect("/" + str(new_post_id))
         else:
             error = "Fill all fields"
             self.render_form(subject, content, error)
@@ -145,7 +172,7 @@ class NewPost(BlogHandler):
 class EditPost(BlogHandler):
     def get(self):
         post_id = int(self.request.get("post_id"))
-        post = BlogPost.get_by_id(post_id)
+        post = get_post_by_id(post_id)
         if self.user_id and self.user_id == post.author_id:
             subject = post.title
             content = post.content
@@ -159,11 +186,8 @@ class EditPost(BlogHandler):
         post_id = int(self.request.get("post_id"))
         if subject and content and post_id:
             # write to db
-            post = BlogPost.get_by_id(post_id)
-            post.title = subject
-            post.content = content
-            post.put()
-            self.redirect("/" + str(post_id))
+            update_post(post_id = post_id, title=subject, content=content)
+            self.redirect("/%s" % post_id)
         else:
             error = "Fill all fields"
             self.render_form(subject, content, error)
@@ -172,9 +196,9 @@ class EditPost(BlogHandler):
 class DeletePost(BlogHandler):
     def get(self):
         post_id = int(self.request.get("post_id"))
-        post = BlogPost.get_by_id(post_id)
+        post = get_post_by_id(post_id)
         if self.user_id and post and self.user_id == post.author_id:
-            post.delete()
+            delete_post(post_id)
             sleep(0.1)
             self.redirect("/")
         else:
@@ -183,7 +207,8 @@ class DeletePost(BlogHandler):
 
 class ViewPost(BlogHandler):
     def render_post(self, post_id, error=""):
-        post = BlogPost.get_by_id(post_id)
+        post = get_post_by_id(post_id)
+
         if post:
             raw_comments = get_all_comments(post_id)
             comments = []
@@ -197,7 +222,9 @@ class ViewPost(BlogHandler):
             was_liked = False
             if self.user and self.user_id != post.author_id and self.user_id in liker_ids:
                 was_liked = True
+
             author = get_name_by_id(post.author_id)
+
             self.render("view_post.html", author=author, post=post, post_id=post_id,
                         like_counter=like_counter, was_liked=was_liked,
                         comments=comments, error=error)
@@ -214,7 +241,7 @@ class ViewPost(BlogHandler):
             content = self.request.get("content")
             error = "Write your comment"
             if content:
-                write_comment(user_id=self.user_id, post_id=post_id, content=content)
+                create_comment(user_id=self.user_id, post_id=post_id, content=content)
                 sleep(0.1)
                 self.redirect("/%s" % post_id)
             else:
