@@ -5,10 +5,10 @@
     <h2>Top 10 newest posts</h2>
     {% for entry in posts %}
         <div>
-            <h3><a href="/{{ entry.post.key().id() }}">{{ entry.post.title }}</a></h3>
+            <h3><a href="/{{ entry.post_id }}">{{ entry.post.title }}</a></h3>
             <em>{{ entry.author }}</em>
             <p>{{ entry.post.content | safe }}</p>
-            <a href="/like?post_id={{ entry.post.key().id()}}&source=">
+            <a href="/like?post_id={{ entry.post_id }}&source=">
                 {% if entry.was_liked:%}
                     Liked&nbsp;
                 {% else: %}
@@ -16,6 +16,14 @@
                 {% endif %}
                 <span>{{ entry.like_counter }}</span>
             </a>
+            <br>
+            <a href="/{{ entry.post_id }}">{{ entry.comment_counter }} comments</a>
+            <br>
+            {% if user_id == entry.post.author_id: %}
+            <a href="/editpost?post_id={{ entry.post_id }}">Edit</a>
+            <a href="/deletepost?post_id={{ entry.post_id }}">Delete</a>
+            {% endif %}
+
         </div>
         <hr>
     {% endfor %}

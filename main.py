@@ -67,6 +67,8 @@ def get_all_likes(post_id):
     """Return all likes for certain blog post"""
     return Like.all().filter("post_id =", post_id)
 
+def get_post_id(post):
+    return post.key().id()
 
 def get_comment_id(comment):
     return comment.key().id()
@@ -82,7 +84,7 @@ def write_comment(user_id, post_id, content):
     new_comment.put()
 
 
-Post = namedtuple('Post', 'author post like_counter was_liked')
+Post = namedtuple('Post', 'author post post_id like_counter was_liked comment_counter')
 Comm = namedtuple('Comm', "author comment comment_id")
 
 
@@ -93,13 +95,20 @@ class MainPage(BlogHandler):
         posts = []
         for post in blog_posts:
             author = get_name_by_id(post.author_id)
-            likes = get_all_likes(post.key().id())
+            post_id = get_post_id(post)
+
+            likes = get_all_likes(post_id)
             like_counter = len(list(likes))
             liker_ids = [like.user_id for like in likes]
             was_liked = False
+
+            comments = get_all_comments(post_id)
+            comment_counter = len(list(comments))
             if self.user and self.user_id != post.author_id and self.user_id in liker_ids:
                 was_liked = True
-            posts.append(Post(author=author, post=post, like_counter=like_counter, was_liked=was_liked))
+            posts.append(Post(author=author, post=post, post_id=post_id,
+                              like_counter=like_counter, was_liked=was_liked,
+                              comment_counter=comment_counter))
         self.render("main.html", posts=posts)
 
 

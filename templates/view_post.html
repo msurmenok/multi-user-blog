@@ -2,11 +2,7 @@
 
 {% block content %}
 	{% if user_id and user_id == post.author_id %}
-	<ul>
-		<li><a href="/editpost?post_id={{ post_id }}">Edit</a></li>
-		<li><a href="/deletepost?post_id={{ post_id }}">Delete</a></li>
-	</ul>
-	{% endif %}
+
 	<h2>{{ post.title }}</h2>
 	<em>by {{ author }}</em>
 	<p>{{ post.content | safe }}</p>
@@ -18,14 +14,22 @@
 		{% endif %}
 		<span>{{ like_counter }}</span>
 	</a>
+	<br>
+	<a href="/editpost?post_id={{ post_id }}">Edit</a>
+	<a href="/deletepost?post_id={{ post_id }}">Delete</a>
+	{% endif %}
 	<hr>
 	<section class="new_comment">
+		{% if user_id: %}
 		<form method="post">
 			<label>Leave your comment</label>
 			<br>
 			<textarea name="content">{{ content }}</textarea>
 			<input type="submit">
 		</form>
+		{% else: %}
+		<p>You must be <a href="/signup">signed in</a> to comment</p>
+		{% endif %}
 		<div class="error">{{ error }}</div>
 	</section>
 	<hr>
@@ -36,10 +40,8 @@
 			<em>{{ entry.comment.created|datetimeformat }}</em>
 			<p>{{ entry.comment.content }}</p>
 			{% if user_id and user_id == entry.comment.user_id: %}
-			<ul>
-				<li><a href="/editcomment?comment_id={{ entry.comment_id }}">Edit</a></li>
-				<li><a href="/deletecomment?comment_id={{ entry.comment_id }}">Delete</a></li>
-			</ul>
+			<a href="/editcomment?comment_id={{ entry.comment_id }}">Edit</a>
+			<a href="/deletecomment?comment_id={{ entry.comment_id }}">Delete</a>
 			{% endif %}
 		</div>
 		<hr>
