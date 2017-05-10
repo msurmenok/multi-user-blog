@@ -57,7 +57,8 @@ class BlogHandler(webapp2.RequestHandler):
             self.username = self.user.username
 
 
-Post = namedtuple('Post', 'author post post_id like_counter was_liked comment_counter')
+Post = namedtuple('Post',
+                  'author post post_id like_counter was_liked comment_counter')
 Comm = namedtuple('Comm', "author comment comment_id")
 
 
@@ -77,11 +78,17 @@ class MainPage(BlogHandler):
 
             comments = get_all_comments(post_id)
             comment_counter = len(list(comments))
-            if self.user and self.user_id != post.author_id and self.user_id in liker_ids:
+            if self.user and \
+                    self.user_id != post.author_id and \
+                    self.user_id in liker_ids:
                 was_liked = True
-            posts.append(Post(author=author, post=post, post_id=post_id,
-                              like_counter=like_counter, was_liked=was_liked,
-                              comment_counter=comment_counter))
+            posts.append(
+                Post(
+                    author=author, post=post, post_id=post_id,
+                    like_counter=like_counter, was_liked=was_liked,
+                    comment_counter=comment_counter
+                )
+            )
         self.render("main.html", posts=posts)
 
 
@@ -89,7 +96,8 @@ class NewPost(BlogHandler):
     # if not logged in -> redirect to login page
     def render_form(self, subject="", content="", error=""):
         if self.user:
-            self.render("create_post.html", subject=subject, content=content, error=error)
+            self.render("create_post.html", subject=subject,
+                        content=content, error=error)
         else:
             self.redirect("/login")
 
@@ -102,7 +110,8 @@ class NewPost(BlogHandler):
 
         if subject and content:
             # write to db
-            new_post_id = create_post(title=subject, content=content, author_id=self.user_id)
+            new_post_id = create_post(title=subject, content=content,
+                                      author_id=self.user_id)
             self.redirect("/" + str(new_post_id))
         else:
             error = "Fill all fields"
@@ -117,7 +126,8 @@ class EditPost(BlogHandler):
         if self.user_id and self.user_id == post.author_id:
             subject = post.title
             content = post.content
-            self.render("edit_post.html", subject=subject, content=content, post_id=post_id)
+            self.render("edit_post.html", subject=subject,
+                        content=content, post_id=post_id)
         else:
             self.write("Only author can edit his/her own post!")
 
@@ -127,7 +137,7 @@ class EditPost(BlogHandler):
         post_id = int(self.request.get("post_id"))
         if subject and content and post_id:
             # write to db
-            update_post(post_id = post_id, title=subject, content=content)
+            update_post(post_id=post_id, title=subject, content=content)
             self.redirect("/%s" % post_id)
         else:
             error = "Fill all fields"
@@ -155,20 +165,28 @@ class ViewPost(BlogHandler):
             comments = []
             for comment in raw_comments:
                 author = get_name_by_id(comment.user_id)
-                comments.append(Comm(author=author, comment=comment, comment_id=get_comment_id(comment)))
+                comments.append(
+                    Comm(
+                        author=author, comment=comment,
+                        comment_id=get_comment_id(comment)
+                    )
+                )
 
             likes = get_all_likes(post.key().id())
             like_counter = len(list(likes))
             liker_ids = [like.user_id for like in likes]
             was_liked = False
-            if self.user and self.user_id != post.author_id and self.user_id in liker_ids:
+            if self.user and \
+                    self.user_id != post.author_id and \
+                    self.user_id in liker_ids:
                 was_liked = True
 
             author = get_name_by_id(post.author_id)
 
-            self.render("view_post.html", author=author, post=post, post_id=post_id,
-                        like_counter=like_counter, was_liked=was_liked,
-                        comments=comments, error=error)
+            self.render("view_post.html", author=author, post=post,
+                        post_id=post_id, like_counter=like_counter,
+                        was_liked=was_liked, comments=comments,
+                        error=error)
         else:
             self.redirect("/")
 
@@ -182,7 +200,8 @@ class ViewPost(BlogHandler):
             content = self.request.get("content")
             error = "Write your comment"
             if content:
-                create_comment(user_id=self.user_id, post_id=post_id, content=content)
+                create_comment(user_id=self.user_id, post_id=post_id,
+                               content=content)
                 sleep(0.1)
                 self.redirect("/%s" % post_id)
             else:
@@ -232,7 +251,11 @@ class Signup(BlogHandler):
             # redirect to welcome page
             salt = make_salt()
             pw_hash = make_pw_hash(input_username, input_password, salt)
-            new_user_id = str(create_user(username=input_username, pw_hash=pw_hash, salt=salt))
+            new_user_id = str(
+                create_user(
+                    username=input_username, pw_hash=pw_hash, salt=salt
+                )
+            )
             # set cookie and redirect
             self.set_secure_cookie("user_id", new_user_id)
             self.redirect("/welcome")
@@ -296,7 +319,8 @@ class EditComment(BlogHandler):
         comment = get_comment_by_id(comment_id)
         if self.user_id and comment and self.user_id == comment.user_id:
             content = comment.content
-            self.render("edit_comment.html", content=content, comment_id=comment_id, post_id=comment.post_id)
+            self.render("edit_comment.html", content=content,
+                        comment_id=comment_id, post_id=comment.post_id)
         else:
             self.write("Only author can edit his/her own post!")
 
