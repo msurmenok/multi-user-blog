@@ -25,6 +25,7 @@ jinja_env.filters['datetimeformat'] = datetimeformat
 
 
 class BlogHandler(webapp2.RequestHandler):
+    """ Parent handler class for all pages. """
     def write(self, *a, **kw):
         self.response.out.write(*a, **kw)
 
@@ -35,7 +36,8 @@ class BlogHandler(webapp2.RequestHandler):
         t = jinja_env.get_template(template)
         params["user"] = self.user
         if self.user:
-            params["user_id"] = self.user.key().id()
+            # Pass user id to View
+            params["user_id"] = get_user_id(self.user)
         return t.render(params)
 
     def set_secure_cookie(self, name, val):
@@ -57,15 +59,19 @@ class BlogHandler(webapp2.RequestHandler):
             self.username = self.user.username
 
 
+# Used namedtuple to pass information to the View
 Post = namedtuple('Post',
                   'author post post_id like_counter was_liked comment_counter')
 Comm = namedtuple('Comm', "author comment comment_id")
 
 
 class MainPage(BlogHandler):
+    """ Handles main page. """
+
     def get(self):
         blog_posts = get_all_posts()
 
+        # Create a list of tuples Post to pass it to the View.
         posts = []
         for post in blog_posts:
             author = get_name_by_id(post.author_id)
@@ -93,7 +99,8 @@ class MainPage(BlogHandler):
 
 
 class NewPost(BlogHandler):
-    # if not logged in -> redirect to login page
+    """ Allows logged user to create a post. """
+
     def render_form(self, subject="", content="", error=""):
         if self.user:
             self.render("create_post.html", subject=subject,
@@ -120,6 +127,8 @@ class NewPost(BlogHandler):
 
 
 class EditPost(BlogHandler):
+    """ Allows the author of a blog post edit it. """
+
     def get(self):
         post_id = int(self.request.get("post_id"))
         post = get_post_by_id(post_id)
@@ -145,6 +154,8 @@ class EditPost(BlogHandler):
 
 
 class DeletePost(BlogHandler):
+    """ Allows the author of a blog post to delete it. """
+
     def get(self):
         post_id = int(self.request.get("post_id"))
         post = get_post_by_id(post_id)
@@ -157,11 +168,17 @@ class DeletePost(BlogHandler):
 
 
 class ViewPost(BlogHandler):
+    """
+    Shows certain blog post in separate page with all its likes and comments.
+    """
+
     def render_post(self, post_id, error=""):
         post = get_post_by_id(post_id)
 
         if post:
             raw_comments = get_all_comments(post_id)
+
+            # Create a list of tuples Comm for using in the View.
             comments = []
             for comment in raw_comments:
                 author = get_name_by_id(comment.user_id)
@@ -172,6 +189,7 @@ class ViewPost(BlogHandler):
                     )
                 )
 
+            # Show number of likes and whether the user liked this post or not.
             likes = get_all_likes(post.key().id())
             like_counter = len(list(likes))
             liker_ids = [like.user_id for like in likes]
@@ -195,6 +213,7 @@ class ViewPost(BlogHandler):
         self.render_post(post_id)
 
     def post(self, post_id):
+        """ Handles form for comments in permalink. """
         post_id = int(post_id)
         if self.user_id:
             content = self.request.get("content")
@@ -211,6 +230,7 @@ class ViewPost(BlogHandler):
 
 
 class Signup(BlogHandler):
+    """ Handles registration page. """
     def get(self):
         self.render("signup.html")
 
@@ -247,8 +267,7 @@ class Signup(BlogHandler):
         if have_error:
             self.render('signup.html', **params)
         else:
-            # write name to db
-            # redirect to welcome page
+            # write name to db and redirect to welcome page
             salt = make_salt()
             pw_hash = make_pw_hash(input_username, input_password, salt)
             new_user_id = str(
@@ -262,7 +281,8 @@ class Signup(BlogHandler):
 
 
 class Login(BlogHandler):
-    # if login succeed redirect to welcome page
+    """ Handles log in page. """
+
     def get(self):
         self.render("login.html")
 
@@ -281,12 +301,14 @@ class Login(BlogHandler):
 
 
 class Logout(BlogHandler):
+    """ Handles link for log out. """
     def get(self):
         self.response.headers.add_header('Set-Cookie', 'user_id=; Path=/')
         self.redirect("/signup")
 
 
 class Welcome(BlogHandler):
+    """ Handles the welcome page. """
     def get(self):
         if self.user:
             self.render("welcome.html", username=self.username)
@@ -295,15 +317,21 @@ class Welcome(BlogHandler):
 
 
 class LikePost(BlogHandler):
+    """ Handles like link. """
+
     def get(self):
         post_id = int(self.request.get("post_id"))
+
+        # Remember to which page to return.
         source = self.request.get("source")
+
         post = get_post_by_id(post_id)
         likes = get_all_likes(post_id)
         liker_ids = [like.user_id for like in likes]
         if not self.user:
             self.redirect("/login")
         if self.user:
+            # If user already liked this post - remove like, otherwise add.
             if self.user_id != post.author_id:
                 if self.user_id in liker_ids:
                     delete_like(self.user_id, likes)
@@ -314,6 +342,8 @@ class LikePost(BlogHandler):
 
 
 class EditComment(BlogHandler):
+    """ Allows user to edit his/her comment on the separate page. """
+
     def get(self):
         comment_id = int(self.request.get("comment_id"))
         comment = get_comment_by_id(comment_id)
@@ -338,6 +368,8 @@ class EditComment(BlogHandler):
 
 
 class DeleteComment(BlogHandler):
+    """ Handles link for removing user's comment. """
+
     def get(self):
         comment_id = int(self.request.get("comment_id"))
         comment = get_comment_by_id(comment_id)
@@ -352,6 +384,8 @@ class DeleteComment(BlogHandler):
 
 # DB ENTITIES
 class BlogPost(db.Model):
+    """ Represents user's blog post. """
+
     title = db.StringProperty(required=True)
     content = db.TextProperty(required=True)
     author_id = db.IntegerProperty(required=True)
@@ -360,17 +394,20 @@ class BlogPost(db.Model):
 
 
 class User(db.Model):
+    """ Represents a user. """
     username = db.StringProperty(required=True)
     hash = db.StringProperty(required=True)
     salt = db.StringProperty(required=True)
 
 
 class Like(db.Model):
+    """ Represents like for a blog post. """
     user_id = db.IntegerProperty(required=True)
     post_id = db.IntegerProperty(required=True)
 
 
 class Comment(db.Model):
+    """ Represents comment for a blog post. """
     content = db.TextProperty(required=True)
     user_id = db.IntegerProperty(required=True)
     post_id = db.IntegerProperty(required=True)
@@ -379,33 +416,72 @@ class Comment(db.Model):
 
 
 # DB calls
-#  User repository
+# User repository
 def get_name_by_id(user_id):
+    """
+    Finds user's nickname in db.
+    Args:
+        user_id: Integer, user's id in db.
+    Returns:
+        String that represents user's nickname.
+    """
     return User.get_by_id(user_id).username
 
 
+def get_user_by_name(name):
+    """ Returns user by his/her nickname. """
+    return User.all().filter('username =', name).get()
+
+
 def create_user(username, pw_hash, salt):
+    """
+    Create a new user in db.
+    Args:
+        username: String with unique user's nickname.
+        pw_hash: String, generated has of user's password.
+        salt: String, auto generated secret word.
+    Returns:
+        Integer, generated by db user's id.
+    """
     new_user = User(username=username, hash=pw_hash, salt=salt)
     new_user.put()
     return get_user_id(new_user)
 
 
 def get_user_id(user):
+    """ Find specific user id. """
     return user.key().id()
 
 
 # Post repository
 def get_all_posts():
+    """ Returns all posts ordered by date created. """
     return BlogPost.all().order('-created')
 
 
 def create_post(title, content, author_id):
+    """
+    Adds new post in db.
+    Args:
+        title: String, the topic of blog post.
+        content: String, text of blog post.
+        author_id: Integer, associated with author id from User table.
+    Returns:
+        Integer, generated id of created blog post.
+    """
     new_post = BlogPost(title=title, content=content, author_id=author_id)
     new_post.put()
     return get_post_id(new_post)
 
 
 def update_post(post_id, title, content):
+    """
+    Changes specific post in db.
+    Args:
+        post_id: Integer, id of blog post.
+        title: String, the topic of blog post.
+        content: String, text of blog post.
+    """
     post = get_post_by_id(post_id)
     if post:
         post.title = title
@@ -431,20 +507,40 @@ def delete_post(post_id):
 
 
 def get_post_id(post):
+    """ Returns id for specific post. """
     return post.key().id()
 
 
 def get_post_by_id(post_id):
+    """
+    Finds specific post in db by it's id.
+    Args:
+        post_id: Integer, id of the post given by db.
+    Returns:
+        Specific blog post.
+    """
     return BlogPost.get_by_id(post_id)
 
 
 # Like repository
 def create_like(user_id, post_id):
+    """
+    Adds new like to db.
+    Args:
+        user_id: Integer, id of the user who liked post.
+        post_id: Integer, id of the post that was liked.
+    """
     new_like = Like(user_id=user_id, post_id=post_id)
     new_like.put()
 
 
 def delete_like(user_id, likes):
+    """
+    Delete specific like from db.
+    Args:
+        user_id: Integer, id of the user who removed his/her like
+        likes: List of likes for specific blog post.
+    """
     like_to_delete = likes.filter("user_id =", user_id).get()
     like_to_delete.delete()
 
@@ -462,6 +558,7 @@ def get_all_likes(post_id):
 
 # Comment repository
 def get_comment_id(comment):
+    """ Returns id for specific comment. """
     return comment.key().id()
 
 
@@ -477,11 +574,24 @@ def get_all_comments(post_id):
 
 
 def create_comment(user_id, post_id, content):
+    """
+    Adds new comment to db.
+    Args:
+        user_id: Integer, id of the user who commented the post.
+        post_id: Integer, id of the post which was commented.
+        content: String, text of the comment.
+    """
     new_comment = Comment(user_id=user_id, post_id=post_id, content=content)
     new_comment.put()
 
 
 def update_comment(comment_id, content):
+    """
+    Updates the specific comment in db.
+    Ars:
+        comment_id: Integer, id of the specific comment.
+        content: String, updated text of the comment.
+    """
     comment = get_comment_by_id(comment_id)
     if comment:
         comment.content = content
@@ -489,10 +599,16 @@ def update_comment(comment_id, content):
 
 
 def get_comment_by_id(comment_id):
+    """ Returns specific comment by it's id. """
     return Comment.get_by_id(comment_id)
 
 
 def delete_comment(comment_id):
+    """
+    Delete specific comment from db.
+    Args:
+        comment_id: Integer, id of comment that should be removed.
+    """
     comment = get_comment_by_id(comment_id)
     if comment:
         comment.delete()
@@ -500,14 +616,29 @@ def delete_comment(comment_id):
 
 # Cookie security
 def hash_str(s):
+    """
+    Creates hash for specific s with secret word.
+    Args:
+        s: String that should be encrypted.
+    Returns:
+        Hash.
+    """
     return hmac.new(SECRET, s).hexdigest()
 
 
 def make_secure_val(s):
+    """ Combines value and its hash. """
     return "%s|%s" % (s, hash_str(s))
 
 
 def check_secure_val(h):
+    """
+    Check if value matches generated hash.
+    Args:
+        h: String, combination of value and its hash.
+    Returns:
+        String value if it matches the hash.
+    """
     val = h.split("|")[0]
     if h == make_secure_val(val):
         return val
@@ -515,15 +646,33 @@ def check_secure_val(h):
 
 # Password security
 def make_salt():
+    """ Auto generates secret word. """
     return ''.join(random.choice(string.letters) for x in range(0, 15))
 
 
 def make_pw_hash(name, pw, salt):
+    """
+    Generates hash for user's password.
+    Args:
+        name: String, user's nickname.
+        pw: String, user's password.
+        salt: String, auto generated secret word.
+    Returns:
+        Hash.
+    """
     return hashlib.sha256(name + pw + salt).hexdigest()
 
 
 def valid_pw(name, pw):
-    user = User.all().filter('username =', name).get()
+    """
+    Check if user's password matches its hash.
+    Args:
+        name: String, user's nickname
+        pw: String, entered password.
+    Returns:
+        User if password matches.
+    """
+    user = get_user_by_name(name)
     if user:
         salt = user.salt
         if user.hash == make_pw_hash(name, pw, salt):
