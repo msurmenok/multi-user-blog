@@ -6,6 +6,7 @@ import hmac
 import string
 from collections import namedtuple
 from time import sleep
+from config import SECRET
 
 import webapp2
 import jinja2
@@ -21,9 +22,6 @@ def datetimeformat(value, format='%d %B %Y, %H:%M:%S'):
     return value.strftime(format)
 
 jinja_env.filters['datetimeformat'] = datetimeformat
-
-
-SECRET = "we-haVe_Always#Lived+in@the=CasTle!<3"
 
 
 class BlogHandler(webapp2.RequestHandler):
@@ -57,9 +55,6 @@ class BlogHandler(webapp2.RequestHandler):
         if self.user:
             self.user_id = self.user.key().id()
             self.username = self.user.username
-
-
-
 
 
 Post = namedtuple('Post', 'author post post_id like_counter was_liked comment_counter')
@@ -395,9 +390,20 @@ def update_post(post_id, title, content):
 
 
 def delete_post(post_id):
+    """
+    Delete post and all associated with it likes and comments
+    Args:
+        post_id: Integer that represents id of blog post.
+    """
     post = get_post_by_id(post_id)
     if post:
         post.delete()
+        likes = get_all_likes(post_id)
+        for like in likes:
+            like.delete()
+        comments = get_all_comments(post_id)
+        for comment in comments:
+            comment.delete()
 
 
 def get_post_id(post):
@@ -420,7 +426,13 @@ def delete_like(user_id, likes):
 
 
 def get_all_likes(post_id):
-    """Return all likes for certain blog post"""
+    """
+    Retrieves all likes associated with certain blog post.
+    Args:
+        post_id: Integer that represents blog post id.
+    Returns:
+         List of likes for certain blog post.
+    """
     return Like.all().filter("post_id =", post_id)
 
 
@@ -430,7 +442,13 @@ def get_comment_id(comment):
 
 
 def get_all_comments(post_id):
-    """Return all comments for certain blog post"""
+    """
+    Retrieves all comments associated with certain blog post.
+    Args:
+        post_id: Integer that represents blog post id.
+    Returns:
+         List of all comments ordered by time created.
+    """
     return Comment.all().filter("post_id =", post_id).order("-created")
 
 
