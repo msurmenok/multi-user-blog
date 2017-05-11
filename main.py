@@ -74,6 +74,7 @@ class MainPage(BlogHandler):
         # Create a list of tuples Post to pass it to the View.
         posts = []
         for post in blog_posts:
+            post.content = post.content.replace('\n', '<br>')
             author = get_name_by_id(post.author_id)
             post_id = get_post_id(post)
 
@@ -127,7 +128,7 @@ class NewPost(BlogHandler):
 
 
 class EditPost(BlogHandler):
-    """ Allows the author of a blog post edit it. """
+    """ Allows the author of a blog post to edit it. """
 
     def get(self):
         post_id = int(self.request.get("post_id"))
@@ -176,6 +177,7 @@ class ViewPost(BlogHandler):
         post = get_post_by_id(post_id)
 
         if post:
+            post.content = post.content.replace('\n', '<br>')
             raw_comments = get_all_comments(post_id)
 
             # Create a list of tuples Comm for using in the View.
