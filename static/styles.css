@@ -1,0 +1,23 @@
+/* FONTS */
+
+a {
+    font-size: 1.2em;
+}
+
+.nickname {
+    font-weight: bold;
+}
+
+/* Navigation */
+nav ul li {
+    display: inline-flex;
+}
+
+/* Body */
+.social a, ul li {
+    margin-right: 20px;
+}
+
+ul {
+    padding: 0;
+}

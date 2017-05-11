@@ -6,37 +6,40 @@
 	<h2>{{ post.title }}</h2>
 	<em>by {{ author }}</em>
 	<p>{{ post.content | safe }}</p>
-	<a href="/like?post_id={{ post_id }}&source={{ post_id }}">
-		{% if was_liked:%}
-			Liked&nbsp;
-		{% else: %}
-			Like&nbsp;
-		{% endif %}
-		<span>{{ like_counter }}</span>
-	</a>
-	<br>
+	<div class="social">
+		<a href="/like?post_id={{ post_id }}&source={{ post_id }}">
+			{% if was_liked:%}
+				<span class="glyphicon glyphicon-heart" aria-hidden="true"></span>
+			{% else: %}
+				<span class="glyphicon glyphicon-heart-empty" aria-hidden="true"></span>
+			{% endif %}
+			<span>{{ like_counter }}</span>
+		</a>
+	</div>
 	{% if user_id and user_id == post.author_id %}
 	<a href="/editpost?post_id={{ post_id }}">Edit</a>
 	<a href="/deletepost?post_id={{ post_id }}">Delete</a>
 	{% endif %}
 	<hr>
-	<section class="new_comment">
-		{% if user_id: %}
-		<form method="post">
-			<label>Leave your comment</label>
-			<br>
-			<textarea name="content">{{ content }}</textarea>
-			<input type="submit">
-		</form>
-		{% else: %}
-		<p>You must be <a href="/signup">signed in</a> to comment</p>
-		{% endif %}
-		<div class="error">{{ error }}</div>
+	<section class="row new_comment">
+		<div class="col-sm-12 col-lg-12">
+			{% if user_id: %}
+			<form method="post">
+				<label>Leave your comment</label>
+				<br>
+				<textarea name="content">{{ content }}</textarea>
+				<input type="submit">
+			</form>
+			{% else: %}
+			<p>You must be <a href="/signup">signed in</a> to comment</p>
+			{% endif %}
+			<div class="error">{{ error }}</div>
+		</div>
 	</section>
 	<hr>
-	<section class="comments">
+	<section class="row comments">
 		{% for entry in comments: %}
-		<div>
+		<div class="col-sm-12 col-lg-12">
 			<em><strong>{{ entry.author }}</strong></em>
 			<em>{{ entry.comment.created|datetimeformat }}</em>
 			<p>{{ entry.comment.content }}</p>

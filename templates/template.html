@@ -1,33 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <link type="text/css" rel="stylesheet" href="/static/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="/static/styles.css">
+    <title>Multi User Blog</title>
 
-  <title>Multi User Blog</title>
+
+
 </head>
 
 <body>
-    <header>
-    </header>
-    <nav>
-        <ul>
-            <li><a href="/">Home</a> </li>
-            <li><a href="/newpost">New Post</a></li>
-        {% if user: %}
-
-            <li><a href="#">{{ user.username }}</a></li>
-            <li><a href="/logout">Log out</a></li>
-        {% else: %}
-            <li><a href="/login">Log in</a></li>
-            <li><a href="/signup">Sign up</a></li>
-        </ul>
-        {% endif %}
-    </nav>
-    <div id="content">
-    {% block content %}
-    {% endblock %}
+    <div class="container">
+        <header>
+            <img src="https://unsplash.it/2000/300">
+        </header>
+        <nav class="nav">
+            <ul>
+                <li><a href="/">Home</a> </li>
+                <li><a href="/newpost">New Post</a></li>
+            {% if user: %}
+                <li><a href="/logout">Log out</a></li>
+                <li><a href="#">{{ user.username }}</a></li>
+            {% else: %}
+                <li><a href="/login">Log in</a></li>
+                <li><a href="/signup">Sign up</a></li>
+            </ul>
+            {% endif %}
+        </nav>
+        <div class="row">
+            <div id="content" class="col-sm-12 col-lg-12">
+            {% block content %}
+            {% endblock %}
+            </div>
+        </div>
+        <footer></footer>
     </div>
-    <footer></footer>
 </body>
 
 </html>
