@@ -4,7 +4,9 @@
     {% for entry in posts %}
         <div>
             <h3><a href="/{{ entry.post_id }}">{{ entry.post.title }}</a></h3>
-            <em class="nickname">{{ entry.author }}</em>
+            <div class="author">
+                <em><strong>by {{ entry.author }}</strong></em>
+            </div>
             <p>{{ entry.post.content | safe }}</p>
             <div class="social">
                 <a href="/like?post_id={{ entry.post_id }}&source=">

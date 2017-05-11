@@ -4,7 +4,9 @@
 
 
 	<h2>{{ post.title }}</h2>
-	<em>by {{ author }}</em>
+	<div class="author">
+		<em><strong>by {{ author }}</strong></em>
+	</div>
 	<p>{{ post.content | safe }}</p>
 	<div class="social">
 		<a href="/like?post_id={{ post_id }}&source={{ post_id }}">
