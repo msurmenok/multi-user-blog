@@ -14,10 +14,23 @@ nav ul li {
 }
 
 /* Body */
-.social a, ul li {
+ul li {
+    margin-left: 20px;
+}
+
+.social a, .change-panel a {
     margin-right: 20px;
+}
+
+ul, .social {
+    margin-top: 20px;
+}
+
+.change-panel {
+    margin-top: 10px;
 }
 
 ul {
     padding: 0;
 }
+

@@ -15,10 +15,15 @@
 <body>
     <div class="container">
         <header>
-            <img src="https://unsplash.it/2000/300">
+            <picture>
+                <source media="(min-width: 1200px)" srcset="/static/img/header_1140.png">
+                <source media="(min-width: 992px)" srcset="/static/img/header_940.png">
+                <source media="(min-width: 768px)" srcset="/static/img/header_720.png">
+                <img class="img-responsive" src="/static/img/header_700.png" alt="main cover image">
+            </picture>
         </header>
         <nav class="nav">
-            <ul>
+            <ul class="text-right">
                 <li><a href="/">Home</a> </li>
                 <li><a href="/newpost">New Post</a></li>
             {% if user: %}

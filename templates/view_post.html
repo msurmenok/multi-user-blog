@@ -17,8 +17,10 @@
 		</a>
 	</div>
 	{% if user_id and user_id == post.author_id %}
-	<a href="/editpost?post_id={{ post_id }}">Edit</a>
-	<a href="/deletepost?post_id={{ post_id }}">Delete</a>
+	<div class="change-panel">
+		<a href="/editpost?post_id={{ post_id }}">Edit</a>
+		<a href="/deletepost?post_id={{ post_id }}">Delete</a>
+	</div>
 	{% endif %}
 	<hr>
 	<section class="row new_comment">
@@ -27,7 +29,8 @@
 			<form method="post">
 				<label>Leave your comment</label>
 				<br>
-				<textarea name="content">{{ content }}</textarea>
+				<textarea class="col-sm-12 col-lg-12" name="content">{{ content }}</textarea>
+				<br>
 				<input type="submit">
 			</form>
 			{% else: %}
@@ -44,11 +47,14 @@
 			<em>{{ entry.comment.created|datetimeformat }}</em>
 			<p>{{ entry.comment.content }}</p>
 			{% if user_id and user_id == entry.comment.user_id: %}
-			<a href="/editcomment?comment_id={{ entry.comment_id }}">Edit</a>
-			<a href="/deletecomment?comment_id={{ entry.comment_id }}">Delete</a>
+			<div class="change-panel">
+				<a href="/editcomment?comment_id={{ entry.comment_id }}">Edit</a>
+				<a href="/deletecomment?comment_id={{ entry.comment_id }}">Delete</a>
+			</div>
 			{% endif %}
+			<hr>
 		</div>
-		<hr>
+
 		{% endfor %}
 	</section>
 {% endblock %}

@@ -1,7 +1,6 @@
 {% extends "template.html" %}
 
 {% block content %}
-    <h1>Welcome to our Blog!</h1>
     {% for entry in posts %}
         <div>
             <h3><a href="/{{ entry.post_id }}">{{ entry.post.title }}</a></h3>
@@ -19,8 +18,10 @@
                 <a href="/{{ entry.post_id }}">{{ entry.comment_counter }} comments</a>
             </div>
             {% if user_id == entry.post.author_id: %}
-            <a href="/editpost?post_id={{ entry.post_id }}">Edit</a>
-            <a href="/deletepost?post_id={{ entry.post_id }}">Delete</a>
+            <div class="change-panel">
+                <a href="/editpost?post_id={{ entry.post_id }}">Edit</a>
+                <a href="/deletepost?post_id={{ entry.post_id }}">Delete</a>
+            </div>
             {% endif %}
 
         </div>
