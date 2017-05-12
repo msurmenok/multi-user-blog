@@ -4,26 +4,25 @@
     <form method="post">
         <table>
             <tr>
-              <td class="label">
+                <td>
                 Username
-              </td>
-              <td>
+                </td>
+                <td>
                 <input type="text" name="username" value="{{ username }}">
-              </td>
+                </td>
+                <td class="error">{{ error }}</td>
             </tr>
 
             <tr>
-              <td class="label">
+                <td>
                 Password
-              </td>
-              <td>
+                </td>
+                <td>
                 <input type="password" name="password" value="">
-              </td>
+                </td>
+                <td></td>
             </tr>
         </table>
-
-        <div class="error">{{ error }}</div>
-
-          <input type="submit">
-        </form>
+        <input type="submit" class="btn btn-lg btn-default">
+    </form>
 {% endblock %}

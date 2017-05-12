@@ -4,20 +4,20 @@
 	<h1>Edit your Blog Post</h1>
 	<form method="post">
         <input type="hidden" name="post_id" value="{{ post_id }}">
-	<label>
-		<div>Subject:</div>
-		<input type="text" name="subject" value="{{ subject }}">
-	</label>
-	<br>
-	<label>
-		<div>Text:</div>
-		<textarea name="content">
-			{{ content }}
-		</textarea>
-	</label>
-	<br>
-	<input type="submit">
+		<div>
+			<label style="width: 100%">
+				<div>Subject:</div>
+				<input type="text" name="subject" value="{{ subject }}" class="col-xs-12 col-sm-12 col-lg-12">
+			</label>
+			<br>
+			<label>
+				<div>Text:</div>
+				<textarea name="content" class="col-xs-12 col-sm-12 col-lg-12">{{ content }}</textarea>
+			</label>
+		</div>
+		<input type="submit" class="btn btn-lg btn-default">
+		<a href="/{{ post_id }}" class="btn btn-lg btn-default cancel">Cancel</a>
 	</form>
-	<div class="error">{{ error }}</div>
-	<a href="/{{ post_id }}">Cancel</a>
+
+	<p class="error">{{ error }}</p>
 {% endblock %}

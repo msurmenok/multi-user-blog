@@ -18,7 +18,7 @@ jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir),
                                autoescape=True)
 
 
-def datetimeformat(value, format='%d %B %Y, %H:%M:%S'):
+def datetimeformat(value, format='%d %B %Y'):
     return value.strftime(format)
 
 jinja_env.filters['datetimeformat'] = datetimeformat
@@ -151,7 +151,7 @@ class EditPost(BlogHandler):
             self.redirect("/%s" % post_id)
         else:
             error = "Fill all fields"
-            self.render_form(subject, content, error)
+            self.render("edit_post.html", subject=subject, content=content, error=error)
 
 
 class DeletePost(BlogHandler):
@@ -183,6 +183,7 @@ class ViewPost(BlogHandler):
             # Create a list of tuples Comm for using in the View.
             comments = []
             for comment in raw_comments:
+                comment.content = comment.content.replace("\n", "<br>")
                 author = get_name_by_id(comment.user_id)
                 comments.append(
                     Comm(
@@ -247,23 +248,23 @@ class Signup(BlogHandler):
                       email=input_email)
 
         if not valid_username(input_username):
-            params['error_username'] = "That's not a valid username."
+            params['error_username'] = "That's not a valid username"
             have_error = True
 
         if is_username_exist(input_username):
-            params['error_username'] = "Such name already exists."
+            params['error_username'] = "Such name already exists"
             have_error = True
 
         if not valid_password(input_password):
-            params['error_password'] = "That wasn't a valid password."
+            params['error_password'] = "That wasn't a valid password"
             have_error = True
 
         elif input_password != input_verify:
-            params['error_verify'] = "Your passwords didn't match."
+            params['error_verify'] = "Your passwords didn't match"
             have_error = True
 
         if not valid_email(input_email):
-            params['error_email'] = "That's not a valid email."
+            params['error_email'] = "That's not a valid email"
             have_error = True
 
         if have_error:
@@ -366,7 +367,7 @@ class EditComment(BlogHandler):
             self.redirect("/%s" % get_comment_by_id(comment_id).post_id)
         else:
             error = "Comment can't be empty"
-            self.render_form(content, error)
+            self.render("edit_comment.html", content=content, error=error)
 
 
 class DeleteComment(BlogHandler):

@@ -31,9 +31,9 @@
 			<form method="post">
 				<label>Leave your comment</label>
 				<br>
-				<textarea class="col-sm-12 col-lg-12" name="content">{{ content }}</textarea>
+				<textarea class="col-xs-12 col-sm-12 col-lg-12" name="content">{{ content }}</textarea>
 				<br>
-				<input type="submit">
+				<input type="submit" class="btn btn-lg btn-default">
 			</form>
 			{% else: %}
 			<p>You must be <a href="/signup">signed in</a> to comment</p>
@@ -42,21 +42,27 @@
 		</div>
 	</section>
 	<hr>
-	<section class="row comments">
+	<section class="comments">
 		{% for entry in comments: %}
-		<div class="col-sm-12 col-lg-12">
-			<em><strong>{{ entry.author }}</strong></em>
-			<em>{{ entry.comment.created|datetimeformat }}</em>
-			<p>{{ entry.comment.content }}</p>
-			{% if user_id and user_id == entry.comment.user_id: %}
-			<div class="change-panel">
-				<a href="/editcomment?comment_id={{ entry.comment_id }}">Edit</a>
-				<a href="/deletecomment?comment_id={{ entry.comment_id }}">Delete</a>
+		<div  class="row">
+			<div class="col-sm-4 col-lg-2">
+				<em><strong>{{ entry.author }}</strong></em>
 			</div>
-			{% endif %}
-			<hr>
-		</div>
+			<div class="col-sm-8 col-lg-10">
+				<span class="date">
+					<em>{{ entry.comment.created | datetimeformat }}</em>
+				</span>
+				<p>{{ entry.comment.content | safe }}</p>
+				{% if user_id and user_id == entry.comment.user_id: %}
+				<div class="change-panel">
+					<a href="/editcomment?comment_id={{ entry.comment_id }}">Edit</a>
+					<a href="/deletecomment?comment_id={{ entry.comment_id }}">Delete</a>
+				</div>
+				{% endif %}
 
+			</div>
+		</div>
+		<hr>
 		{% endfor %}
 	</section>
 {% endblock %}

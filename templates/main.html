@@ -3,7 +3,7 @@
 {% block content %}
     {% for entry in posts %}
         <div>
-            <h3><a href="/{{ entry.post_id }}">{{ entry.post.title }}</a></h3>
+            <h2><a href="/{{ entry.post_id }}">{{ entry.post.title }}</a></h2>
             <div class="author">
                 <em><strong>by {{ entry.author }}</strong></em>
             </div>
