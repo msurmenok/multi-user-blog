@@ -61,7 +61,7 @@ class BlogHandler(webapp2.RequestHandler):
 
 # Used namedtuple to pass information to the View
 Post = namedtuple('Post',
-                  'author post post_id like_counter was_liked comment_counter')
+                  'author post post_id like_counter was_liked comment_counter, is_owner')
 Comm = namedtuple('Comm', "author comment comment_id")
 
 
@@ -78,22 +78,26 @@ class MainPage(BlogHandler):
             author = get_name_by_id(post.author_id)
             post_id = get_post_id(post)
 
+            comments = get_all_comments(post_id)
+            comment_counter = len(list(comments))
+
             likes = get_all_likes(post_id)
             like_counter = len(list(likes))
             liker_ids = [like.user_id for like in likes]
             was_liked = False
+            is_owner = False
 
-            comments = get_all_comments(post_id)
-            comment_counter = len(list(comments))
             if self.user and \
                     self.user_id != post.author_id and \
                     self.user_id in liker_ids:
                 was_liked = True
+            elif self.user and self.user_id == post.author_id:
+                is_owner = True
             posts.append(
                 Post(
                     author=author, post=post, post_id=post_id,
                     like_counter=like_counter, was_liked=was_liked,
-                    comment_counter=comment_counter
+                    comment_counter=comment_counter, is_owner=is_owner
                 )
             )
         self.render("main.html", posts=posts)
@@ -197,17 +201,19 @@ class ViewPost(BlogHandler):
             like_counter = len(list(likes))
             liker_ids = [like.user_id for like in likes]
             was_liked = False
+            is_owner = False
             if self.user and \
                     self.user_id != post.author_id and \
                     self.user_id in liker_ids:
                 was_liked = True
-
+            elif self.user and self.user_id == post.author_id:
+                is_owner = True
             author = get_name_by_id(post.author_id)
 
             self.render("view_post.html", author=author, post=post,
                         post_id=post_id, like_counter=like_counter,
-                        was_liked=was_liked, comments=comments,
-                        error=error)
+                        was_liked=was_liked, is_owner=is_owner,
+                        comments=comments, error=error)
         else:
             self.redirect("/")
 
@@ -419,7 +425,7 @@ class Comment(db.Model):
 
 
 # DB calls
-# User repository
+# USER repository
 def get_name_by_id(user_id):
     """
     Finds user's nickname in db.
@@ -456,7 +462,7 @@ def get_user_id(user):
     return user.key().id()
 
 
-# Post repository
+# POST repository
 def get_all_posts():
     """ Returns all posts ordered by date created. """
     return BlogPost.all().order('-created')
@@ -525,7 +531,7 @@ def get_post_by_id(post_id):
     return BlogPost.get_by_id(post_id)
 
 
-# Like repository
+# LIKE repository
 def create_like(user_id, post_id):
     """
     Adds new like to db.
@@ -559,7 +565,7 @@ def get_all_likes(post_id):
     return Like.all().filter("post_id =", post_id)
 
 
-# Comment repository
+# COMMENT repository
 def get_comment_id(comment):
     """ Returns id for specific comment. """
     return comment.key().id()
