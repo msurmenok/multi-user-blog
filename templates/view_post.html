@@ -32,13 +32,13 @@
 				<label>Leave your comment</label>
 				<br>
 				<textarea class="col-xs-12 col-sm-12 col-lg-12" name="content">{{ content }}</textarea>
-				<br>
+				<p class="error">{{ error }}</p>
 				<input type="submit" class="btn btn-lg btn-default">
 			</form>
 			{% else: %}
-			<p>You must be <a href="/signup">signed in</a> to comment</p>
+			<p>You must be signed in</a> to comment. <a href="/signup">Sign up</a> now.</p>
 			{% endif %}
-			<div class="error">{{ error }}</div>
+
 		</div>
 	</section>
 	<hr>

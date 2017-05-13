@@ -10,7 +10,6 @@
                 <td>
                 <input type="text" name="username" value="{{ username }}">
                 </td>
-                <td class="error">{{ error }}</td>
             </tr>
 
             <tr>
@@ -20,9 +19,9 @@
                 <td>
                 <input type="password" name="password" value="">
                 </td>
-                <td></td>
             </tr>
         </table>
+        <p class="error">{{ error }}</p>
         <input type="submit" class="btn btn-lg btn-default">
     </form>
 {% endblock %}

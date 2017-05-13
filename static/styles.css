@@ -40,7 +40,7 @@ ul {
 }
 
 /* Body */
-ul li {
+ul li, .btn-cancel {
     margin-left: 20px;
 }
 
