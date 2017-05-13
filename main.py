@@ -149,13 +149,15 @@ class EditPost(BlogHandler):
         subject = self.request.get("subject")
         content = self.request.get("content")
         post_id = int(self.request.get("post_id"))
-        if subject and content and post_id:
-            # write to db
-            update_post(post_id=post_id, title=subject, content=content)
-            self.redirect("/%s" % post_id)
-        else:
-            error = "Fill all fields"
-            self.render("edit_post.html", subject=subject, content=content, error=error)
+        post = get_post_by_id(post_id)
+        if self.user_id and self.user_id == post.author_id:
+            if subject and content and post_id:
+                # write to db
+                update_post(post_id=post_id, title=subject, content=content)
+                self.redirect("/%s" % post_id)
+            else:
+                error = "Fill all fields"
+                self.render("edit_post.html", subject=subject, content=content, error=error)
 
 
 class DeletePost(BlogHandler):
@@ -364,16 +366,19 @@ class EditComment(BlogHandler):
             self.write("Only author can edit his/her own post!")
 
     def post(self):
+
         content = self.request.get("content")
         comment_id = int(self.request.get("comment_id"))
-        if content and comment_id:
-            # write to db
-            update_comment(comment_id, content)
-            sleep(0.1)
-            self.redirect("/%s" % get_comment_by_id(comment_id).post_id)
-        else:
-            error = "Comment can't be empty"
-            self.render("edit_comment.html", content=content, error=error)
+        comment = get_comment_by_id(comment_id)
+        if self.user_id and comment and self.user_id == comment.user_id:
+            if content and comment_id:
+                # write to db
+                update_comment(comment_id, content)
+                sleep(0.1)
+                self.redirect("/%s" % get_comment_by_id(comment_id).post_id)
+            else:
+                error = "Comment can't be empty"
+                self.render("edit_comment.html", content=content, error=error)
 
 
 class DeleteComment(BlogHandler):
