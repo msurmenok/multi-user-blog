@@ -48,7 +48,11 @@ ul li, .btn-cancel {
     margin-right: 20px;
 }
 
-ul, .social {
+table {
+    margin-top: 40px;
+}
+
+ul, .social, label {
     margin-top: 20px;
 }
 

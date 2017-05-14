@@ -8,10 +8,6 @@ handlers:
 - url: /static
   static_dir: static
 
-
-- url: /config\.py
-  static_files: config.py
-
 - url: /.*
   script: main.app
 

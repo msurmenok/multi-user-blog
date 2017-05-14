@@ -6,7 +6,6 @@ import hmac
 import string
 from collections import namedtuple
 from time import sleep
-from config import SECRET
 
 import webapp2
 import jinja2
@@ -16,6 +15,8 @@ from google.appengine.ext import db
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir),
                                autoescape=True)
+
+SECRET = "sdfkj l;kjs;dlkfjl;j oijd"
 
 
 def datetimeformat(value, format='%d %B %Y'):
