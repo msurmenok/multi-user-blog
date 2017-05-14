@@ -56,7 +56,7 @@ class BlogHandler(webapp2.RequestHandler):
         uid = self.read_secure_cookie('user_id')
         self.user = uid and User.get_by_id(int(uid))
         if self.user:
-            self.user_id = self.user.key().id()
+            self.user_id = get_user_id(self.user)
             self.username = self.user.username
 
 
@@ -89,8 +89,8 @@ class MainPage(BlogHandler):
             is_owner = False
 
             if self.user and \
-                    self.user_id != post.author_id and \
-                    self.user_id in liker_ids:
+                            self.user_id != post.author_id and \
+                            self.user_id in liker_ids:
                 was_liked = True
             elif self.user and self.user_id == post.author_id:
                 is_owner = True
@@ -323,7 +323,30 @@ class Welcome(BlogHandler):
     """ Handles the welcome page. """
     def get(self):
         if self.user:
-            self.render("welcome.html", username=self.username)
+            blog_posts = get_all_user_posts(int(self.user_id))
+            posts = []
+            for post in blog_posts:
+                post.content = post.content.replace('\n', '<br>')
+                author = get_name_by_id(post.author_id)
+                post_id = get_post_id(post)
+
+                comments = get_all_comments(post_id)
+                comment_counter = len(list(comments))
+
+                likes = get_all_likes(post_id)
+                like_counter = len(list(likes))
+
+                was_liked = False
+                is_owner = True
+
+                posts.append(
+                    Post(
+                        author=author, post=post, post_id=post_id,
+                        like_counter=like_counter, was_liked=was_liked,
+                        comment_counter=comment_counter, is_owner=is_owner
+                    )
+                )
+            self.render("welcome.html", username=self.username, posts=posts)
         else:
             self.redirect("/signup")
 
@@ -471,7 +494,18 @@ def get_user_id(user):
 # POST repository
 def get_all_posts():
     """ Returns all posts ordered by date created. """
-    return BlogPost.all().order('-created')
+    return BlogPost.all().order("-created")
+
+
+def get_all_user_posts(user_id):
+    """
+    Returns all posts owned by certain user.
+    Args:
+        user_id: Integer, id of the author.
+    Returns:
+        List of all user's posts.
+    """
+    return BlogPost.all().filter("author_id =", user_id).order("-created")
 
 
 def create_post(title, content, author_id):
