@@ -16,7 +16,7 @@ template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir),
                                autoescape=True)
 
-SECRET = "sdfkj l;kjs;dlkfjl;j oijd"
+SECRET = "Write your secret key here! :3"
 
 
 def datetimeformat(value, format='%d %B %Y'):
