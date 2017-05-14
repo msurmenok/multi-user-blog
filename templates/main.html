@@ -9,14 +9,21 @@
             </div>
             <p>{{ entry.post.content | safe }}</p>
             <div class="social">
-                <a href="/like?post_id={{ entry.post_id }}&source=">
+                {% if entry.is_owner: %}
+                    <a href="#" data-toggle="tooltip" title="You can't like your own post">
+                        <span class="glyphicon glyphicon-heart-empty" aria-hidden="true"></span>
+                        <span>{{ entry.like_counter }}</span>
+                    </a>
+                {% else: %}
+                    <a href="/like?post_id={{ entry.post_id }}&source=">
                     {% if entry.was_liked:%}
                         <span class="glyphicon glyphicon-heart" aria-hidden="true"></span>
                     {% else: %}
                         <span class="glyphicon glyphicon-heart-empty" aria-hidden="true"></span>
                     {% endif %}
                     <span>{{ entry.like_counter }}</span>
-                </a>
+                    </a>
+                {% endif %}
                 <a href="/{{ entry.post_id }}">{{ entry.comment_counter }} comments</a>
             </div>
             {% if user_id == entry.post.author_id: %}

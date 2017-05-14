@@ -1,22 +1,28 @@
 {% extends "template.html" %}
 
 {% block content %}
-
-
 	<h2>{{ post.title }}</h2>
 	<div class="author">
 		<em><strong>by {{ author }}</strong></em>
 	</div>
 	<p>{{ post.content | safe }}</p>
 	<div class="social">
-		<a href="/like?post_id={{ post_id }}&source={{ post_id }}">
-			{% if was_liked:%}
-				<span class="glyphicon glyphicon-heart" aria-hidden="true"></span>
-			{% else: %}
+		{% if is_owner: %}
+			<a href="#" data-toggle="tooltip" title="You can't like your own post">
 				<span class="glyphicon glyphicon-heart-empty" aria-hidden="true"></span>
-			{% endif %}
-			<span>{{ like_counter }}</span>
-		</a>
+				<span>{{ like_counter }}</span>
+			</a>
+		{% else: %}
+			<a href="/like?post_id={{ post_id }}&source={{ post_id }}">
+				{% if was_liked:%}
+					<span class="glyphicon glyphicon-heart" aria-hidden="true"></span>
+				{% else: %}
+					<span class="glyphicon glyphicon-heart-empty" aria-hidden="true"></span>
+				{% endif %}
+				<span>{{ like_counter }}</span>
+			</a>
+		{% endif %}
+
 	</div>
 	{% if user_id and user_id == post.author_id %}
 	<div class="change-panel">
