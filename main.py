@@ -62,7 +62,8 @@ class BlogHandler(webapp2.RequestHandler):
 
 # Used namedtuple to pass information to the View
 Post = namedtuple('Post',
-                  'author post post_id like_counter was_liked comment_counter, is_owner')
+                  'author post post_id like_counter was_liked '
+                  'comment_counter is_owner')
 Comm = namedtuple('Comm', "author comment comment_id")
 
 
@@ -89,8 +90,8 @@ class MainPage(BlogHandler):
             is_owner = False
 
             if self.user and \
-                            self.user_id != post.author_id and \
-                            self.user_id in liker_ids:
+                    self.user_id != post.author_id and \
+                    self.user_id in liker_ids:
                 was_liked = True
             elif self.user and self.user_id == post.author_id:
                 is_owner = True
@@ -158,7 +159,8 @@ class EditPost(BlogHandler):
                 self.redirect("/%s" % post_id)
             else:
                 error = "Fill all fields"
-                self.render("edit_post.html", subject=subject, content=content, error=error)
+                self.render("edit_post.html", subject=subject,
+                            content=content, error=error)
 
 
 class DeletePost(BlogHandler):
