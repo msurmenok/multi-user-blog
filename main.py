@@ -20,9 +20,16 @@ SECRET = "Write your secret key here! :3"
 
 
 def datetimeformat(value, format='%d %B %Y'):
+    """ Filter for template. """
     return value.strftime(format)
 
+
+def formattext(value):
+    """ Filter for template. """
+    return value.replace('\n', '<br>')
+
 jinja_env.filters['datetimeformat'] = datetimeformat
+jinja_env.filters['formattext'] = formattext
 
 
 class BlogHandler(webapp2.RequestHandler):
@@ -62,7 +69,7 @@ class BlogHandler(webapp2.RequestHandler):
 
 # Used namedtuple to pass information to the View
 Post = namedtuple('Post',
-                  'post like_counter was_liked '
+                  'post was_liked '
                   'is_owner')
 
 
@@ -75,12 +82,7 @@ class MainPage(BlogHandler):
         # Create a list of tuples Post to pass it to the View.
         posts = []
         for post in blog_posts:
-            post.content = post.content.replace('\n', '<br>')
-
-            post_id = get_post_id(post)
-
-            likes = get_all_likes(post_id)
-            like_counter = len(list(likes))
+            likes = get_all_likes(post.id)
             liker_ids = [like.user_id for like in likes]
             was_liked = False
             is_owner = False
@@ -93,8 +95,7 @@ class MainPage(BlogHandler):
                 is_owner = True
             posts.append(
                 Post(
-                    post=post,
-                    like_counter=like_counter, was_liked=was_liked,
+                    post=post, was_liked=was_liked,
                     is_owner=is_owner
                 )
             )
@@ -182,11 +183,9 @@ class ViewPost(BlogHandler):
         post = get_post_by_id(post_id)
 
         if post:
-            post.content = post.content.replace('\n', '<br>')
-            raw_comments = get_all_comments(post_id)
 
             # Show number of likes and whether the user liked this post or not.
-            likes = get_all_likes(post.key().id())
+            likes = get_all_likes(post.id)
             like_counter = len(list(likes))
             liker_ids = [like.user_id for like in likes]
             was_liked = False
@@ -197,10 +196,8 @@ class ViewPost(BlogHandler):
                 was_liked = True
             elif self.user and self.user_id == post.author_id:
                 is_owner = True
-            author = get_name_by_id(post.author_id)
 
             self.render("view_post.html", post=post,
-                        like_counter=like_counter,
                         was_liked=was_liked, is_owner=is_owner,
                         error=error)
         else:
@@ -312,20 +309,13 @@ class Welcome(BlogHandler):
             blog_posts = get_all_user_posts(int(self.user_id))
             posts = []
             for post in blog_posts:
-                post.content = post.content.replace('\n', '<br>')
-                author = get_name_by_id(post.author_id)
-                post_id = get_post_id(post)
-
-                likes = get_all_likes(post_id)
-                like_counter = len(list(likes))
 
                 was_liked = False
                 is_owner = True
 
                 posts.append(
                     Post(
-                        post=post,
-                        like_counter=like_counter, was_liked=was_liked,
+                        post=post, was_liked=was_liked,
                         is_owner=is_owner
                     )
                 )
@@ -414,11 +404,6 @@ class BlogPost(db.Model):
     last_modified = db.DateTimeProperty(auto_now=True)
 
     @property
-    def comments(self):
-        post_id = self.key().id()
-        return list(get_all_comments(post_id))
-
-    @property
     def id(self):
         """ Returns post id. """
         return get_post_id(self)
@@ -427,6 +412,15 @@ class BlogPost(db.Model):
     def author(self):
         """ Returns author nickname. """
         return get_name_by_id(self.author_id)
+
+    @property
+    def comments(self):
+        return list(get_all_comments(self.id))
+
+    @property
+    def likes(self):
+        return list(get_all_likes(self.id))
+
 
 class User(db.Model):
     """ Represents a user. """

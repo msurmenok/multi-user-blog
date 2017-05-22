@@ -5,12 +5,12 @@
 	<div class="author">
 		<em><strong>by {{ post.author }}</strong></em>
 	</div>
-	<p>{{ post.content | safe }}</p>
+	<p>{{ post.content | formattext | safe }}</p>
 	<div class="social">
 		{% if is_owner: %}
 			<a href="#" data-toggle="tooltip" title="You can't like your own post">
 				<span class="glyphicon glyphicon-heart-empty" aria-hidden="true"></span>
-				<span>{{ like_counter }}</span>
+				<span>{{ post.likes | length }}</span>
 			</a>
 		{% else: %}
 			<a href="/like?post_id={{ post.id }}&source={{ post.id }}">
@@ -19,7 +19,7 @@
 				{% else: %}
 					<span class="glyphicon glyphicon-heart-empty" aria-hidden="true"></span>
 				{% endif %}
-				<span>{{ like_counter }}</span>
+				<span>{{ post.likes | length }}</span>
 			</a>
 		{% endif %}
 
@@ -31,7 +31,7 @@
 	</div>
 	{% endif %}
 	<hr>
-	<section class="row new_comment">
+	<div class="row new_comment">
 		<div class="col-sm-12 col-lg-12">
 			{% if user_id: %}
 			<form method="post">
@@ -45,9 +45,9 @@
 			{% endif %}
 
 		</div>
-	</section>
+	</div>
 	<hr>
-	<section class="comments">
+	<div class="comments">
 		{% for comment in post.comments: %}
 		<div  class="row">
 			<div class="col-sm-4 col-lg-2">
@@ -57,7 +57,7 @@
 				<span class="date">
 					<em>{{ comment.created | datetimeformat }}</em>
 				</span>
-				<p>{{ comment.content | safe }}</p>
+				<p>{{ comment.content | formattext | safe }}</p>
 				{% if user_id and user_id == comment.user_id: %}
 				<div class="change-panel">
 					<a href="/editcomment?comment_id={{comment.id }}">Edit</a>
@@ -69,5 +69,5 @@
 		</div>
 		<hr>
 		{% endfor %}
-	</section>
+	</div>
 {% endblock %}

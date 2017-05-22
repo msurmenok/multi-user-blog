@@ -12,11 +12,11 @@
                     <br>
                     <em>Last modified: {{ entry.post.last_modified | datetimeformat}}</em>
                 </div>
-                <p>{{ entry.post.content | safe }}</p>
+                <p>{{ entry.post.content | formattext | safe }}</p>
                 <div class="social">
                     <a href="#" data-toggle="tooltip" title="You can't like your own post">
                         <span class="glyphicon glyphicon-heart-empty" aria-hidden="true"></span>
-                        <span>{{ entry.like_counter }}</span>
+                        <span>{{ entry.post.likes | length }}</span>
                     </a>
                     <a href="/{{ entry.post.id }}">{{ entry.post.comments | length }} comments</a>
                 </div>
