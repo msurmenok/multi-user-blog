@@ -6,7 +6,7 @@
     {% if posts: %}
         {% for entry in posts %}
             <div>
-                <h2><a href="/{{ entry.post_id }}">{{ entry.post.title }}</a></h2>
+                <h2><a href="/{{ entry.post.id }}">{{ entry.post.title }}</a></h2>
                 <div class="author">
                     <em>Created: {{ entry.post.created | datetimeformat}}</strong></em>
                     <br>
@@ -18,11 +18,11 @@
                         <span class="glyphicon glyphicon-heart-empty" aria-hidden="true"></span>
                         <span>{{ entry.like_counter }}</span>
                     </a>
-                    <a href="/{{ entry.post_id }}">{{ entry.comment_counter }} comments</a>
+                    <a href="/{{ entry.post.id }}">{{ entry.post.comments | length }} comments</a>
                 </div>
                 <div class="change-panel">
-                    <a href="/editpost?post_id={{ entry.post_id }}">Edit</a>
-                    <a href="/deletepost?post_id={{ entry.post_id }}">Delete</a>
+                    <a href="/editpost?post_id={{ entry.post.id }}">Edit</a>
+                    <a href="/deletepost?post_id={{ entry.post.id }}">Delete</a>
                 </div>
             </div>
             <hr>

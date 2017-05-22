@@ -3,9 +3,9 @@
 {% block content %}
     {% for entry in posts %}
         <div>
-            <h2><a href="/{{ entry.post_id }}">{{ entry.post.title }}</a></h2>
+            <h2><a href="/{{ entry.post.id }}">{{ entry.post.title }}</a></h2>
             <div class="author">
-                <em><strong>by {{ entry.author }}</strong></em>
+                <em><strong>by {{ entry.post.author }}</strong></em>
             </div>
             <p>{{ entry.post.content | safe }}</p>
             <div class="social">
@@ -15,7 +15,7 @@
                         <span>{{ entry.like_counter }}</span>
                     </a>
                 {% else: %}
-                    <a href="/like?post_id={{ entry.post_id }}&source=">
+                    <a href="/like?post_id={{ entry.post.id }}&source=">
                     {% if entry.was_liked:%}
                         <span class="glyphicon glyphicon-heart" aria-hidden="true"></span>
                     {% else: %}
@@ -24,12 +24,12 @@
                     <span>{{ entry.like_counter }}</span>
                     </a>
                 {% endif %}
-                <a href="/{{ entry.post_id }}">{{ entry.comment_counter }} comments</a>
+                <a href="/{{ entry.post.id }}">{{ entry.post.comments | length }} comments</a>
             </div>
             {% if user_id == entry.post.author_id: %}
             <div class="change-panel">
-                <a href="/editpost?post_id={{ entry.post_id }}">Edit</a>
-                <a href="/deletepost?post_id={{ entry.post_id }}">Delete</a>
+                <a href="/editpost?post_id={{ entry.post.id }}">Edit</a>
+                <a href="/deletepost?post_id={{ entry.post.id }}">Delete</a>
             </div>
             {% endif %}
 

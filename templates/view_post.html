@@ -3,7 +3,7 @@
 {% block content %}
 	<h2>{{ post.title }}</h2>
 	<div class="author">
-		<em><strong>by {{ author }}</strong></em>
+		<em><strong>by {{ post.author }}</strong></em>
 	</div>
 	<p>{{ post.content | safe }}</p>
 	<div class="social">
@@ -13,7 +13,7 @@
 				<span>{{ like_counter }}</span>
 			</a>
 		{% else: %}
-			<a href="/like?post_id={{ post_id }}&source={{ post_id }}">
+			<a href="/like?post_id={{ post.id }}&source={{ post.id }}">
 				{% if was_liked:%}
 					<span class="glyphicon glyphicon-heart" aria-hidden="true"></span>
 				{% else: %}
@@ -26,8 +26,8 @@
 	</div>
 	{% if user_id and user_id == post.author_id %}
 	<div class="change-panel">
-		<a href="/editpost?post_id={{ post_id }}">Edit</a>
-		<a href="/deletepost?post_id={{ post_id }}">Delete</a>
+		<a href="/editpost?post_id={{ post.id }}">Edit</a>
+		<a href="/deletepost?post_id={{ post.id }}">Delete</a>
 	</div>
 	{% endif %}
 	<hr>
@@ -48,20 +48,20 @@
 	</section>
 	<hr>
 	<section class="comments">
-		{% for entry in comments: %}
+		{% for comment in post.comments: %}
 		<div  class="row">
 			<div class="col-sm-4 col-lg-2">
-				<em><strong>{{ entry.author }}</strong></em>
+				<em><strong>{{ comment.author }}</strong></em>
 			</div>
 			<div class="col-sm-8 col-lg-10">
 				<span class="date">
-					<em>{{ entry.comment.created | datetimeformat }}</em>
+					<em>{{ comment.created | datetimeformat }}</em>
 				</span>
-				<p>{{ entry.comment.content | safe }}</p>
-				{% if user_id and user_id == entry.comment.user_id: %}
+				<p>{{ comment.content | safe }}</p>
+				{% if user_id and user_id == comment.user_id: %}
 				<div class="change-panel">
-					<a href="/editcomment?comment_id={{ entry.comment_id }}">Edit</a>
-					<a href="/deletecomment?comment_id={{ entry.comment_id }}">Delete</a>
+					<a href="/editcomment?comment_id={{comment.id }}">Edit</a>
+					<a href="/deletecomment?comment_id={{ comment.id }}">Delete</a>
 				</div>
 				{% endif %}
 

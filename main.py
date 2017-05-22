@@ -62,9 +62,8 @@ class BlogHandler(webapp2.RequestHandler):
 
 # Used namedtuple to pass information to the View
 Post = namedtuple('Post',
-                  'author post post_id like_counter was_liked '
-                  'comment_counter is_owner')
-Comm = namedtuple('Comm', "author comment comment_id")
+                  'post like_counter was_liked '
+                  'is_owner')
 
 
 class MainPage(BlogHandler):
@@ -77,11 +76,8 @@ class MainPage(BlogHandler):
         posts = []
         for post in blog_posts:
             post.content = post.content.replace('\n', '<br>')
-            author = get_name_by_id(post.author_id)
-            post_id = get_post_id(post)
 
-            comments = get_all_comments(post_id)
-            comment_counter = len(list(comments))
+            post_id = get_post_id(post)
 
             likes = get_all_likes(post_id)
             like_counter = len(list(likes))
@@ -97,9 +93,9 @@ class MainPage(BlogHandler):
                 is_owner = True
             posts.append(
                 Post(
-                    author=author, post=post, post_id=post_id,
+                    post=post,
                     like_counter=like_counter, was_liked=was_liked,
-                    comment_counter=comment_counter, is_owner=is_owner
+                    is_owner=is_owner
                 )
             )
         self.render("main.html", posts=posts)
@@ -189,18 +185,6 @@ class ViewPost(BlogHandler):
             post.content = post.content.replace('\n', '<br>')
             raw_comments = get_all_comments(post_id)
 
-            # Create a list of tuples Comm for using in the View.
-            comments = []
-            for comment in raw_comments:
-                comment.content = comment.content.replace("\n", "<br>")
-                author = get_name_by_id(comment.user_id)
-                comments.append(
-                    Comm(
-                        author=author, comment=comment,
-                        comment_id=get_comment_id(comment)
-                    )
-                )
-
             # Show number of likes and whether the user liked this post or not.
             likes = get_all_likes(post.key().id())
             like_counter = len(list(likes))
@@ -215,10 +199,10 @@ class ViewPost(BlogHandler):
                 is_owner = True
             author = get_name_by_id(post.author_id)
 
-            self.render("view_post.html", author=author, post=post,
-                        post_id=post_id, like_counter=like_counter,
+            self.render("view_post.html", post=post,
+                        like_counter=like_counter,
                         was_liked=was_liked, is_owner=is_owner,
-                        comments=comments, error=error)
+                        error=error)
         else:
             self.redirect("/")
 
@@ -332,9 +316,6 @@ class Welcome(BlogHandler):
                 author = get_name_by_id(post.author_id)
                 post_id = get_post_id(post)
 
-                comments = get_all_comments(post_id)
-                comment_counter = len(list(comments))
-
                 likes = get_all_likes(post_id)
                 like_counter = len(list(likes))
 
@@ -343,9 +324,9 @@ class Welcome(BlogHandler):
 
                 posts.append(
                     Post(
-                        author=author, post=post, post_id=post_id,
+                        post=post,
                         like_counter=like_counter, was_liked=was_liked,
-                        comment_counter=comment_counter, is_owner=is_owner
+                        is_owner=is_owner
                     )
                 )
             self.render("welcome.html", username=self.username, posts=posts)
@@ -432,6 +413,20 @@ class BlogPost(db.Model):
     created = db.DateTimeProperty(auto_now_add=True)
     last_modified = db.DateTimeProperty(auto_now=True)
 
+    @property
+    def comments(self):
+        post_id = self.key().id()
+        return list(get_all_comments(post_id))
+
+    @property
+    def id(self):
+        """ Returns post id. """
+        return get_post_id(self)
+
+    @property
+    def author(self):
+        """ Returns author nickname. """
+        return get_name_by_id(self.author_id)
 
 class User(db.Model):
     """ Represents a user. """
@@ -453,6 +448,16 @@ class Comment(db.Model):
     post_id = db.IntegerProperty(required=True)
     created = db.DateTimeProperty(auto_now_add=True)
     last_modified = db.DateTimeProperty(auto_now=True)
+
+    @property
+    def id(self):
+        """ Returns comment id. """
+        return get_comment_id(self)
+
+    @property
+    def author(self):
+        """ Returns author nickname. """
+        return get_name_by_id(self.user_id)
 
 
 # DB calls
