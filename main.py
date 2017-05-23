@@ -77,28 +77,8 @@ class MainPage(BlogHandler):
     """ Handles main page. """
 
     def get(self):
-        blog_posts = get_all_posts()
+        posts = get_all_posts()
 
-        # Create a list of tuples Post to pass it to the View.
-        posts = []
-        for post in blog_posts:
-            likes = get_all_likes(post.id)
-            liker_ids = [like.user_id for like in likes]
-            was_liked = False
-            is_owner = False
-
-            if self.user and \
-                    self.user_id != post.author_id and \
-                    self.user_id in liker_ids:
-                was_liked = True
-            elif self.user and self.user_id == post.author_id:
-                is_owner = True
-            posts.append(
-                Post(
-                    post=post, was_liked=was_liked,
-                    is_owner=is_owner
-                )
-            )
         self.render("main.html", posts=posts)
 
 
@@ -183,23 +163,7 @@ class ViewPost(BlogHandler):
         post = get_post_by_id(post_id)
 
         if post:
-
-            # Show number of likes and whether the user liked this post or not.
-            likes = get_all_likes(post.id)
-            like_counter = len(list(likes))
-            liker_ids = [like.user_id for like in likes]
-            was_liked = False
-            is_owner = False
-            if self.user and \
-                    self.user_id != post.author_id and \
-                    self.user_id in liker_ids:
-                was_liked = True
-            elif self.user and self.user_id == post.author_id:
-                is_owner = True
-
-            self.render("view_post.html", post=post,
-                        was_liked=was_liked, is_owner=is_owner,
-                        error=error)
+            self.render("view_post.html", post=post, error=error)
         else:
             self.redirect("/")
 
@@ -306,19 +270,7 @@ class Welcome(BlogHandler):
     """ Handles the welcome page. """
     def get(self):
         if self.user:
-            blog_posts = get_all_user_posts(int(self.user_id))
-            posts = []
-            for post in blog_posts:
-
-                was_liked = False
-                is_owner = True
-
-                posts.append(
-                    Post(
-                        post=post, was_liked=was_liked,
-                        is_owner=is_owner
-                    )
-                )
+            posts = get_all_user_posts(int(self.user_id))
             self.render("welcome.html", username=self.username, posts=posts)
         else:
             self.redirect("/signup")
@@ -405,24 +357,27 @@ class BlogPost(db.Model):
 
     @property
     def id(self):
-        """ Returns post id. """
+        """ Contains post id. """
         return get_post_id(self)
 
     @property
     def author(self):
-        """ Returns author nickname. """
+        """ Contains author nickname. """
         return get_name_by_id(self.author_id)
 
     @property
     def comments(self):
+        """ Contains all comments for certain blog post. """
         return list(get_all_comments(self.id))
 
     @property
     def likes(self):
+        """ Contains all likes for certain blog post. """
         return list(get_all_likes(self.id))
 
     @property
     def users_liked(self):
+        """ Contains ids of all users that liked this post. """
         return [x.user_id for x in self.likes]
 
 

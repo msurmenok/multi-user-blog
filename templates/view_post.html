@@ -7,14 +7,14 @@
 	</div>
 	<p>{{ post.content | formattext | safe }}</p>
 	<div class="social">
-		{% if is_owner: %}
+		{% if user_id == post.author_id: %}
 			<a href="#" data-toggle="tooltip" title="You can't like your own post">
 				<span class="glyphicon glyphicon-heart-empty" aria-hidden="true"></span>
 				<span>{{ post.likes | length }}</span>
 			</a>
 		{% else: %}
 			<a href="/like?post_id={{ post.id }}&source={{ post.id }}">
-				{% if was_liked:%}
+				{% if user_id in post.users_liked:%}
 					<span class="glyphicon glyphicon-heart" aria-hidden="true"></span>
 				{% else: %}
 					<span class="glyphicon glyphicon-heart-empty" aria-hidden="true"></span>

@@ -4,25 +4,25 @@
     <h1>Welcome, {{ username }}</h1>
     <hr>
     {% if posts: %}
-        {% for entry in posts %}
+        {% for post in posts %}
             <div>
-                <h2><a href="/{{ entry.post.id }}">{{ entry.post.title }}</a></h2>
+                <h2><a href="/{{ post.id }}">{{ post.title }}</a></h2>
                 <div class="author">
-                    <em>Created: {{ entry.post.created | datetimeformat}}</strong></em>
+                    <em>Created: {{ post.created | datetimeformat}}</strong></em>
                     <br>
-                    <em>Last modified: {{ entry.post.last_modified | datetimeformat}}</em>
+                    <em>Last modified: {{ post.last_modified | datetimeformat}}</em>
                 </div>
-                <p>{{ entry.post.content | formattext | safe }}</p>
+                <p>{{ post.content | formattext | safe }}</p>
                 <div class="social">
                     <a href="#" data-toggle="tooltip" title="You can't like your own post">
                         <span class="glyphicon glyphicon-heart-empty" aria-hidden="true"></span>
-                        <span>{{ entry.post.likes | length }}</span>
+                        <span>{{ post.likes | length }}</span>
                     </a>
-                    <a href="/{{ entry.post.id }}">{{ entry.post.comments | length }} comments</a>
+                    <a href="/{{ post.id }}">{{ post.comments | length }} comments</a>
                 </div>
                 <div class="change-panel">
-                    <a href="/editpost?post_id={{ entry.post.id }}">Edit</a>
-                    <a href="/deletepost?post_id={{ entry.post.id }}">Delete</a>
+                    <a href="/editpost?post_id={{ post.id }}">Edit</a>
+                    <a href="/deletepost?post_id={{ post.id }}">Delete</a>
                 </div>
             </div>
             <hr>
