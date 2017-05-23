@@ -78,36 +78,34 @@ class MainPage(BlogHandler):
 
     def get(self):
         posts = get_all_posts()
-
         self.render("main.html", posts=posts)
 
 
 class NewPost(BlogHandler):
     """ Allows logged user to create a post. """
 
-    def render_form(self, subject="", content="", error=""):
+    def get(self):
         if self.user:
-            self.render("create_post.html", subject=subject,
-                        content=content, error=error)
+            self.render("create_post.html")
         else:
             self.redirect("/login")
 
-    def get(self):
-        self.render_form()
-
     def post(self):
-        subject = self.request.get("subject")
-        content = self.request.get("content")
+        if self.user:
+            subject = self.request.get("subject")
+            content = self.request.get("content")
 
-        if subject and content:
-            # write to db
-            new_post_id = create_post(title=subject, content=content,
-                                      author_id=self.user_id)
-            self.redirect("/" + str(new_post_id))
+            if subject and content:
+                # write to db
+                new_post_id = create_post(title=subject, content=content,
+                                          author_id=self.user_id)
+                self.redirect("/" + str(new_post_id))
+            else:
+                error = "Fill all fields"
+                self.render("create_post.html", subject=subject,
+                            content=content, error=error)
         else:
-            error = "Fill all fields"
-            self.render_form(subject, content, error)
-    pass
+            self.redirect("/login")
 
 
 class EditPost(BlogHandler):
