@@ -421,6 +421,10 @@ class BlogPost(db.Model):
     def likes(self):
         return list(get_all_likes(self.id))
 
+    @property
+    def users_liked(self):
+        return [x.user_id for x in self.likes]
+
 
 class User(db.Model):
     """ Represents a user. """
