@@ -61,6 +61,21 @@ def post_exists(function):
     return wrapper
 
 
+def comment_exists(function):
+    """ Decorator that checks if comment with specific id exists in db. """
+    @wraps(function)
+    def wrapper(self, comment_id, *args):
+        comment_id = int(comment_id)
+        key = db.Key.from_path('Comment', comment_id)
+        comment = db.get(key)
+        if comment:
+            return function(self, comment_id, comment, *args)
+        else:
+            self.error(404)
+            return
+    return wrapper
+
+
 class BlogHandler(webapp2.RequestHandler):
     """ Parent handler class for all pages. """
     def write(self, *a, **kw):
