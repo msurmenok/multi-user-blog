@@ -6,6 +6,7 @@ import hmac
 import string
 from collections import namedtuple
 from time import sleep
+from functools import wraps
 
 import webapp2
 import jinja2
@@ -30,6 +31,20 @@ def formattext(value):
 
 jinja_env.filters['datetimeformat'] = datetimeformat
 jinja_env.filters['formattext'] = formattext
+
+
+# Decorators
+def post_exists(function):
+    @wraps(function)
+    def wrapper(self, post_id):
+        key = db.Key.from_path('BlogPost', int(post_id))
+        post = db.get(key)
+        if post:
+            return function(self, post_id, post)
+        else:
+            self.error(404)
+            return
+    return wrapper
 
 
 class BlogHandler(webapp2.RequestHandler):
@@ -66,12 +81,10 @@ class BlogHandler(webapp2.RequestHandler):
             self.user_id = get_user_id(self.user)
             self.username = self.user.username
 
-
-# Used namedtuple to pass information to the View
-Post = namedtuple('Post',
-                  'post was_liked '
-                  'is_owner')
-
+    def error(self, code):
+        super(BlogHandler, self).error(code)
+        if code == 404:
+            self.write("Oh no! 404!!!")
 
 class MainPage(BlogHandler):
     """ Handles main page. """
@@ -111,9 +124,8 @@ class NewPost(BlogHandler):
 class EditPost(BlogHandler):
     """ Allows the author of a blog post to edit it. """
 
-    def get(self):
-        post_id = int(self.request.get("post_id"))
-        post = get_post_by_id(post_id)
+    @post_exists
+    def get(self, post_id, post):
         if self.user_id and self.user_id == post.author_id:
             subject = post.title
             content = post.content
@@ -122,11 +134,11 @@ class EditPost(BlogHandler):
         else:
             self.write("Only author can edit his/her own post!")
 
-    def post(self):
+    @post_exists
+    def post(self, post_id, post):
         subject = self.request.get("subject")
         content = self.request.get("content")
-        post_id = int(self.request.get("post_id"))
-        post = get_post_by_id(post_id)
+        post_id = int(post_id)
         if self.user_id and self.user_id == post.author_id:
             if subject and content and post_id:
                 # write to db
@@ -720,7 +732,7 @@ app = webapp2.WSGIApplication([('/', MainPage),
                                ('/newpost', NewPost),
                                ('/(\d+)', ViewPost),
                                ('/deletepost', DeletePost),
-                               ('/editpost', EditPost),
+                               ('/editpost/(\d+)', EditPost),
                                ('/like', LikePost),
                                ('/deletecomment', DeleteComment),
                                ('/editcomment', EditComment)
