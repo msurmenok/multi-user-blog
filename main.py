@@ -165,9 +165,10 @@ class EditPost(BlogHandler):
 class DeletePost(BlogHandler):
     """ Allows the author of a blog post to delete it. """
 
+    @user_logged_in
     @post_exists
     def get(self, post_id, post):
-        if self.user_id and post and self.user_id == post.author_id:
+        if self.user_id == post.author_id:
             delete_post(post_id)
             sleep(0.1)
             self.redirect("/")
@@ -281,17 +282,17 @@ class Logout(BlogHandler):
 
 class Welcome(BlogHandler):
     """ Handles the welcome page. """
+
+    @user_logged_in
     def get(self):
-        if self.user:
-            posts = get_all_user_posts(int(self.user_id))
-            self.render("welcome.html", username=self.username, posts=posts)
-        else:
-            self.redirect("/signup")
+        posts = get_all_user_posts(int(self.user_id))
+        self.render("welcome.html", username=self.username, posts=posts)
 
 
 class LikePost(BlogHandler):
     """ Handles like link. """
 
+    @user_logged_in
     def get(self):
         post_id = int(self.request.get("post_id"))
 
@@ -301,38 +302,37 @@ class LikePost(BlogHandler):
         post = get_post_by_id(post_id)
         likes = get_all_likes(post_id)
         liker_ids = [like.user_id for like in likes]
-        if not self.user:
-            self.redirect("/login")
-        if self.user:
-            # If user already liked this post - remove like, otherwise add.
-            if self.user_id != post.author_id:
-                if self.user_id in liker_ids:
-                    delete_like(self.user_id, likes)
-                else:
-                    create_like(self.user_id, post_id)
-            sleep(0.1)
-            self.redirect("/" + source)
+
+        # If user already liked this post - remove like, otherwise add.
+        if self.user_id != post.author_id:
+            if self.user_id in liker_ids:
+                delete_like(self.user_id, likes)
+            else:
+                create_like(self.user_id, post_id)
+        sleep(0.1)
+        self.redirect("/" + source)
 
 
 class EditComment(BlogHandler):
     """ Allows user to edit his/her comment on the separate page. """
 
+    @user_logged_in
     def get(self):
         comment_id = int(self.request.get("comment_id"))
         comment = get_comment_by_id(comment_id)
-        if self.user_id and comment and self.user_id == comment.user_id:
+        if comment and self.user_id == comment.user_id:
             content = comment.content
             self.render("edit_comment.html", content=content,
                         comment_id=comment_id, post_id=comment.post_id)
         else:
             self.write("Only author can edit his/her own post!")
 
+    @user_logged_in
     def post(self):
-
         content = self.request.get("content")
         comment_id = int(self.request.get("comment_id"))
         comment = get_comment_by_id(comment_id)
-        if self.user_id and comment and self.user_id == comment.user_id:
+        if comment and self.user_id == comment.user_id:
             if content and comment_id:
                 # write to db
                 update_comment(comment_id, content)
@@ -346,11 +346,12 @@ class EditComment(BlogHandler):
 class DeleteComment(BlogHandler):
     """ Handles link for removing user's comment. """
 
+    @user_logged_in
     def get(self):
         comment_id = int(self.request.get("comment_id"))
         comment = get_comment_by_id(comment_id)
         post_id = comment.post_id
-        if self.user_id and comment and self.user_id == comment.user_id:
+        if comment and self.user_id == comment.user_id:
             delete_comment(comment_id)
             sleep(0.1)
             self.redirect("/%s" % post_id)
