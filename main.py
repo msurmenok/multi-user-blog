@@ -37,7 +37,8 @@ jinja_env.filters['formattext'] = formattext
 def post_exists(function):
     @wraps(function)
     def wrapper(self, post_id):
-        key = db.Key.from_path('BlogPost', int(post_id))
+        post_id = int(post_id)
+        key = db.Key.from_path('BlogPost', post_id)
         post = db.get(key)
         if post:
             return function(self, post_id, post)
@@ -85,6 +86,7 @@ class BlogHandler(webapp2.RequestHandler):
         super(BlogHandler, self).error(code)
         if code == 404:
             self.write("Oh no! 404!!!")
+
 
 class MainPage(BlogHandler):
     """ Handles main page. """
@@ -153,9 +155,8 @@ class EditPost(BlogHandler):
 class DeletePost(BlogHandler):
     """ Allows the author of a blog post to delete it. """
 
-    def get(self):
-        post_id = int(self.request.get("post_id"))
-        post = get_post_by_id(post_id)
+    @post_exists
+    def get(self, post_id, post):
         if self.user_id and post and self.user_id == post.author_id:
             delete_post(post_id)
             sleep(0.1)
@@ -731,7 +732,7 @@ app = webapp2.WSGIApplication([('/', MainPage),
                                ('/login', Login),
                                ('/newpost', NewPost),
                                ('/(\d+)', ViewPost),
-                               ('/deletepost', DeletePost),
+                               ('/deletepost/(\d+)', DeletePost),
                                ('/editpost/(\d+)', EditPost),
                                ('/like', LikePost),
                                ('/deletecomment', DeleteComment),
