@@ -332,10 +332,9 @@ class EditComment(BlogHandler):
     """ Allows user to edit his/her comment on the separate page. """
 
     @user_logged_in
-    def get(self):
-        comment_id = int(self.request.get("comment_id"))
-        comment = get_comment_by_id(comment_id)
-        if comment and self.user_id == comment.user_id:
+    @comment_exists
+    def get(self, comment_id, comment):
+        if self.user_id == comment.user_id:
             content = comment.content
             self.render("edit_comment.html", content=content,
                         comment_id=comment_id, post_id=comment.post_id)
@@ -343,11 +342,10 @@ class EditComment(BlogHandler):
             self.write("Only author can edit his/her own post!")
 
     @user_logged_in
-    def post(self):
+    @comment_exists
+    def post(self, comment_id, comment):
         content = self.request.get("content")
-        comment_id = int(self.request.get("comment_id"))
-        comment = get_comment_by_id(comment_id)
-        if comment and self.user_id == comment.user_id:
+        if self.user_id == comment.user_id:
             if content and comment_id:
                 # write to db
                 update_comment(comment_id, content)
@@ -362,11 +360,10 @@ class DeleteComment(BlogHandler):
     """ Handles link for removing user's comment. """
 
     @user_logged_in
-    def get(self):
-        comment_id = int(self.request.get("comment_id"))
-        comment = get_comment_by_id(comment_id)
+    @comment_exists
+    def get(self, comment_id, comment):
         post_id = comment.post_id
-        if comment and self.user_id == comment.user_id:
+        if self.user_id == comment.user_id:
             delete_comment(comment_id)
             sleep(0.1)
             self.redirect("/%s" % post_id)
@@ -753,7 +750,7 @@ app = webapp2.WSGIApplication([('/', MainPage),
                                ('/deletepost/(\d+)', DeletePost),
                                ('/editpost/(\d+)', EditPost),
                                ('/like', LikePost),
-                               ('/deletecomment', DeleteComment),
-                               ('/editcomment', EditComment)
+                               ('/deletecomment/(\d+)', DeleteComment),
+                               ('/editcomment/(\d+)', EditComment)
                                ],
                               debug=True)
