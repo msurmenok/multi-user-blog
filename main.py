@@ -170,21 +170,13 @@ class ViewPost(BlogHandler):
     Shows certain blog post in separate page with all its likes and comments.
     """
 
-    def render_post(self, post_id, error=""):
-        post = get_post_by_id(post_id)
+    @post_exists
+    def get(self, post_id, post):
+        self.render("view_post.html", post=post)
 
-        if post:
-            self.render("view_post.html", post=post, error=error)
-        else:
-            self.redirect("/")
-
-    def get(self, post_id):
-        post_id = int(post_id)
-        self.render_post(post_id)
-
-    def post(self, post_id):
+    @post_exists
+    def post(self, post_id, post):
         """ Handles form for comments in permalink. """
-        post_id = int(post_id)
         if self.user_id:
             content = self.request.get("content")
             error = "Write your comment"
@@ -194,7 +186,7 @@ class ViewPost(BlogHandler):
                 sleep(0.1)
                 self.redirect("/%s" % post_id)
             else:
-                self.render_post(post_id=post_id, error=error)
+                self.render("view_post.html", post=post, error=error)
         else:
             self.redirect("/login")
 
