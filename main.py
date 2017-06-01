@@ -34,7 +34,20 @@ jinja_env.filters['formattext'] = formattext
 
 
 # Decorators
+
+def user_logged_in(function):
+    """ Decorator that checks if user is logged in. """
+    @wraps(function)
+    def wrapper(self, *args):
+        if self.user:
+            return function(self, *args)
+        else:
+            self.redirect("/signup")
+    return wrapper
+
+
 def post_exists(function):
+    """ Decorator that checks if post with specific id exists in db. """
     @wraps(function)
     def wrapper(self, post_id):
         post_id = int(post_id)
@@ -99,36 +112,33 @@ class MainPage(BlogHandler):
 class NewPost(BlogHandler):
     """ Allows logged user to create a post. """
 
+    @user_logged_in
     def get(self):
-        if self.user:
-            self.render("create_post.html")
-        else:
-            self.redirect("/login")
+        self.render("create_post.html")
 
+    @user_logged_in
     def post(self):
-        if self.user:
-            subject = self.request.get("subject")
-            content = self.request.get("content")
+        subject = self.request.get("subject")
+        content = self.request.get("content")
 
-            if subject and content:
-                # write to db
-                new_post_id = create_post(title=subject, content=content,
-                                          author_id=self.user_id)
-                self.redirect("/" + str(new_post_id))
-            else:
-                error = "Fill all fields"
-                self.render("create_post.html", subject=subject,
-                            content=content, error=error)
+        if subject and content:
+            # write to db
+            new_post_id = create_post(title=subject, content=content,
+                                      author_id=self.user_id)
+            self.redirect("/" + str(new_post_id))
         else:
-            self.redirect("/login")
+            error = "Fill all fields"
+            self.render("create_post.html", subject=subject,
+                        content=content, error=error)
 
 
 class EditPost(BlogHandler):
     """ Allows the author of a blog post to edit it. """
 
+    @user_logged_in
     @post_exists
     def get(self, post_id, post):
-        if self.user_id and self.user_id == post.author_id:
+        if self.user_id == post.author_id:
             subject = post.title
             content = post.content
             self.render("edit_post.html", subject=subject,
@@ -136,13 +146,13 @@ class EditPost(BlogHandler):
         else:
             self.write("Only author can edit his/her own post!")
 
+    @user_logged_in
     @post_exists
     def post(self, post_id, post):
         subject = self.request.get("subject")
         content = self.request.get("content")
-        post_id = int(post_id)
-        if self.user_id and self.user_id == post.author_id:
-            if subject and content and post_id:
+        if self.user_id == post.author_id:
+            if subject and content:
                 # write to db
                 update_post(post_id=post_id, title=subject, content=content)
                 self.redirect("/%s" % post_id)
