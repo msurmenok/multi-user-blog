@@ -38,9 +38,9 @@ jinja_env.filters['formattext'] = formattext
 def user_logged_in(function):
     """ Decorator that checks if user is logged in. """
     @wraps(function)
-    def wrapper(self, *args):
+    def wrapper(self, *args, **kwargs):
         if self.user:
-            return function(self, *args)
+            return function(self, *args, **kwargs)
         else:
             self.redirect("/signup")
     return wrapper
@@ -49,12 +49,12 @@ def user_logged_in(function):
 def post_exists(function):
     """ Decorator that checks if post with specific id exists in db. """
     @wraps(function)
-    def wrapper(self, post_id):
+    def wrapper(self, post_id, *args, **kwargs):
         post_id = int(post_id)
         key = db.Key.from_path('BlogPost', post_id)
         post = db.get(key)
         if post:
-            return function(self, post_id, post)
+            return function(self, post_id, post, *args, **kwargs)
         else:
             self.error(404)
             return
@@ -64,16 +64,28 @@ def post_exists(function):
 def comment_exists(function):
     """ Decorator that checks if comment with specific id exists in db. """
     @wraps(function)
-    def wrapper(self, comment_id, *args):
+    def wrapper(self, comment_id, *args, **kwargs):
         comment_id = int(comment_id)
         key = db.Key.from_path('Comment', comment_id)
         comment = db.get(key)
         if comment:
-            return function(self, comment_id, comment, *args)
+            return function(self, comment_id, comment, *args, **kwargs)
         else:
             self.error(404)
             return
     return wrapper
+
+
+# user_owns_post
+def user_owns_post(function):
+    """ Decorator that checks that post was created by current user. """
+    @wraps(function)
+    def wrapper(self, post_id, post, *args, **kwargs):
+        if self.user_id == post.author_id:
+            return function(self, post_id, post, *args, **kwargs)
+        else:
+            self.error(404)
+# user_owns_comment
 
 
 class BlogHandler(webapp2.RequestHandler):
