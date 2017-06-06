@@ -382,7 +382,8 @@ class EditComment(BlogHandler):
             # write to db
             Comment.update_comment(comment_id, content)
             sleep(0.1)
-            self.redirect("/%s" % Comment.get_comment_by_id(comment_id).post_id)
+            self.redirect("/%s" %
+                          Comment.get_comment_by_id(comment_id).post_id)
         else:
             error = "Comment can't be empty"
             self.render("edit_comment.html",
@@ -643,7 +644,9 @@ class Comment(db.Model):
             post_id: Integer, id of the post which was commented.
             content: String, text of the comment.
         """
-        new_comment = Comment(user_id=user_id, post_id=post_id, content=content)
+        new_comment = Comment(user_id=user_id,
+                              post_id=post_id,
+                              content=content)
         new_comment.put()
 
     @classmethod
