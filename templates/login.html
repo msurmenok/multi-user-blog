@@ -2,27 +2,18 @@
 
 {% block content %}
     <h1>Log in</h1>
-    <form method="post">
-        <table>
-            <tr>
-                <td>
-                Username
-                </td>
-                <td>
+    <div class="userform">
+        <form method="post">
+            <label>
+                <span>Username</span>
                 <input type="text" name="username" value="{{ username }}">
-                </td>
-            </tr>
-
-            <tr>
-                <td>
-                Password
-                </td>
-                <td>
+            </label>
+            <label>
+                <span>Password</span>
                 <input type="password" name="password" value="">
-                </td>
-            </tr>
-        </table>
-        <p class="error">{{ error }}</p>
-        <input type="submit" class="btn btn-lg btn-default">
-    </form>
+            </label>
+            <p class="error">{{ error }}</p>
+            <input type="submit" class="btn btn-lg btn-default">
+        </form>
+    </div>
 {% endblock %}

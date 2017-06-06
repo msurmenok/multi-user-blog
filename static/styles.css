@@ -1,5 +1,5 @@
 /* FONTS */
-p, a, em, table, textarea, input[name="subject"] {
+p, a, em, textarea, input[type="text"], input[type="password"], span {
     font-family: "Helvetica Neue", Helvetica,Arial, sans-serif;
     font-size: 1.2em;
     font-weight: normal;
@@ -47,12 +47,8 @@ ul li, .btn-cancel {
     margin-left: 20px;
 }
 
-.social a, .change-panel a {
+.social a, .change-panel a, span + input {
     margin-right: 20px;
-}
-
-table {
-    margin-top: 40px;
 }
 
 ul, .social, label {
@@ -63,8 +59,7 @@ ul, .social, label {
     margin-top: 10px;
 }
 
-
-.author, textarea, table {
+.author, textarea {
     margin-bottom: 20px;
 }
 
@@ -86,10 +81,19 @@ label {
     width: 100%;
 }
 
-table tr td {
-    padding-right: 20px;
-}
-
 hr {
     width: 100%;
+}
+
+label span {
+    display: inline-block;
+    min-width: 130px;
+}
+
+.userform label {
+    margin-top: 0;
+}
+
+.userform {
+    margin-top: 40px;
 }
