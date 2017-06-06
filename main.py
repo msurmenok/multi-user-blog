@@ -101,8 +101,6 @@ def user_owns_comment(function):
     return wrapper
 
 
-
-
 class BlogHandler(webapp2.RequestHandler):
     """ Parent handler class for all pages. """
     def write(self, *a, **kw):
@@ -116,7 +114,7 @@ class BlogHandler(webapp2.RequestHandler):
         params["user"] = self.user
         if self.user:
             # Pass user id to View
-            params["user_id"] = get_user_id(self.user)
+            params["user_id"] = User.get_user_id(self.user)
         return t.render(params)
 
     def set_secure_cookie(self, name, val):
@@ -134,7 +132,7 @@ class BlogHandler(webapp2.RequestHandler):
         uid = self.read_secure_cookie('user_id')
         self.user = uid and User.get_by_id(int(uid))
         if self.user:
-            self.user_id = get_user_id(self.user)
+            self.user_id = User.get_user_id(self.user)
             self.username = self.user.username
 
     def error(self, code):
@@ -147,7 +145,7 @@ class MainPage(BlogHandler):
     """ Handles main page. """
 
     def get(self):
-        posts = get_all_posts()
+        posts = BlogPost.get_all_posts()
         self.render("main.html",
                     posts=posts)
 
@@ -166,9 +164,9 @@ class NewPost(BlogHandler):
 
         if subject and content:
             # write to db
-            new_post_id = create_post(title=subject,
-                                      content=content,
-                                      author_id=self.user_id)
+            new_post_id = BlogPost.create_post(title=subject,
+                                               content=content,
+                                               author_id=self.user_id)
             self.redirect("/" + str(new_post_id))
         else:
             error = "Fill all fields"
@@ -200,9 +198,9 @@ class EditPost(BlogHandler):
         content = self.request.get("content")
         if subject and content:
             # write to db
-            update_post(post_id=post_id,
-                        title=subject,
-                        content=content)
+            BlogPost.update_post(post_id=post_id,
+                                 title=subject,
+                                 content=content)
             self.redirect("/%s" % post_id)
         else:
             error = "Fill all fields"
@@ -219,7 +217,7 @@ class DeletePost(BlogHandler):
     @post_exists
     @user_owns_post
     def get(self, post_id, post):
-        delete_post(post_id)
+        BlogPost.delete_post(post_id)
         sleep(0.1)
         self.redirect("/")
 
@@ -240,8 +238,9 @@ class ViewPost(BlogHandler):
             content = self.request.get("content")
             error = "Write your comment"
             if content:
-                create_comment(user_id=self.user_id, post_id=post_id,
-                               content=content)
+                Comment.create_comment(user_id=self.user_id,
+                                       post_id=post_id,
+                                       content=content)
                 sleep(0.1)
                 self.redirect("/%s" % post_id)
             else:
@@ -292,7 +291,7 @@ class Signup(BlogHandler):
             salt = make_salt()
             pw_hash = make_pw_hash(input_username, input_password, salt)
             new_user_id = str(
-                create_user(
+                User.create_user(
                     username=input_username, pw_hash=pw_hash, salt=salt
                 )
             )
@@ -333,7 +332,7 @@ class Welcome(BlogHandler):
 
     @user_logged_in
     def get(self):
-        posts = get_all_user_posts(int(self.user_id))
+        posts = BlogPost.get_all_user_posts(int(self.user_id))
         self.render("welcome.html", username=self.username, posts=posts)
 
 
@@ -347,16 +346,16 @@ class LikePost(BlogHandler):
         # Remember to which page to return.
         source = self.request.get("source")
 
-        post = get_post_by_id(post_id)
-        likes = get_all_likes(post_id)
+        post = BlogPost.get_post_by_id(post_id)
+        likes = Like.get_all_likes(post_id)
         liker_ids = [like.user_id for like in likes]
 
         # If user already liked this post - remove like, otherwise add.
         if self.user_id != post.author_id:
             if self.user_id in liker_ids:
-                delete_like(self.user_id, likes)
+                Like.delete_like(self.user_id, likes)
             else:
-                create_like(self.user_id, post_id)
+                Like.create_like(self.user_id, post_id)
         sleep(0.1)
         self.redirect("/" + source)
 
@@ -381,9 +380,9 @@ class EditComment(BlogHandler):
         content = self.request.get("content")
         if content and comment_id:
             # write to db
-            update_comment(comment_id, content)
+            Comment.update_comment(comment_id, content)
             sleep(0.1)
-            self.redirect("/%s" % get_comment_by_id(comment_id).post_id)
+            self.redirect("/%s" % Comment.get_comment_by_id(comment_id).post_id)
         else:
             error = "Comment can't be empty"
             self.render("edit_comment.html",
@@ -399,7 +398,7 @@ class DeleteComment(BlogHandler):
     @user_owns_comment
     def get(self, comment_id, comment):
         post_id = comment.post_id
-        delete_comment(comment_id)
+        Comment.delete_comment(comment_id)
         sleep(0.1)
         self.redirect("/%s" % post_id)
 
@@ -417,27 +416,106 @@ class BlogPost(db.Model):
     @property
     def id(self):
         """ Contains post id. """
-        return get_post_id(self)
+        return BlogPost.get_post_id(self)
 
     @property
     def author(self):
         """ Contains author nickname. """
-        return get_name_by_id(self.author_id)
+        return User.get_name_by_id(self.author_id)
 
     @property
     def comments(self):
         """ Contains all comments for certain blog post. """
-        return list(get_all_comments(self.id))
+        return list(Comment.get_all_comments(self.id))
 
     @property
     def likes(self):
         """ Contains all likes for certain blog post. """
-        return list(get_all_likes(self.id))
+        return list(Like.get_all_likes(self.id))
 
     @property
     def users_liked(self):
         """ Contains ids of all users that liked this post. """
         return [x.user_id for x in self.likes]
+
+    @classmethod
+    def get_all_posts(cls):
+        """ Returns all posts ordered by date created. """
+        return BlogPost.all().order("-created")
+
+    @classmethod
+    def get_all_user_posts(cls, user_id):
+        """
+        Returns all posts owned by certain user.
+        Args:
+            user_id: Integer, id of the author.
+        Returns:
+            List of all user's posts.
+        """
+        return BlogPost.all().filter("author_id =", user_id).order("-created")
+
+    @classmethod
+    def create_post(cls, title, content, author_id):
+        """
+        Adds new post in db.
+        Args:
+            title: String, the topic of blog post.
+            content: String, text of blog post.
+            author_id: Integer, associated with author id from User table.
+        Returns:
+            Integer, generated id of created blog post.
+        """
+        new_post = BlogPost(title=title, content=content, author_id=author_id)
+        new_post.put()
+        return BlogPost.get_post_id(new_post)
+
+    @classmethod
+    def update_post(cls, post_id, title, content):
+        """
+        Changes specific post in db.
+        Args:
+            post_id: Integer, id of blog post.
+            title: String, the topic of blog post.
+            content: String, text of blog post.
+        """
+        post = BlogPost.get_post_by_id(post_id)
+        if post:
+            post.title = title
+            post.content = content
+            post.put()
+
+    @classmethod
+    def delete_post(cls, post_id):
+        """
+        Delete post and all associated with it likes and comments
+        Args:
+            post_id: Integer that represents id of blog post.
+        """
+        post = BlogPost.get_post_by_id(post_id)
+        if post:
+            post.delete()
+            likes = Like.get_all_likes(post_id)
+            for like in likes:
+                like.delete()
+            comments = Comment.get_all_comments(post_id)
+            for comment in comments:
+                comment.delete()
+
+    @classmethod
+    def get_post_id(cls, post):
+        """ Returns id for specific post. """
+        return post.key().id()
+
+    @classmethod
+    def get_post_by_id(cls, post_id):
+        """
+        Finds specific post in db by it's id.
+        Args:
+            post_id: Integer, id of the post given by db.
+        Returns:
+            Specific blog post.
+        """
+        return BlogPost.get_by_id(post_id)
 
 
 class User(db.Model):
@@ -446,11 +524,80 @@ class User(db.Model):
     hash = db.StringProperty(required=True)
     salt = db.StringProperty(required=True)
 
+    @classmethod
+    def get_name_by_id(cls, user_id):
+        """
+        Finds user's nickname in db.
+        Args:
+            user_id: Integer, user's id in db.
+        Returns:
+            String that represents user's nickname.
+        """
+        return User.get_by_id(user_id).username
+
+    @classmethod
+    def get_user_by_name(cls, name):
+        """ Returns user by his/her nickname. """
+        return User.all().filter('username =', name).get()
+
+    @classmethod
+    def create_user(cls, username, pw_hash, salt):
+        """
+        Create a new user in db.
+        Args:
+            username: String with unique user's nickname.
+            pw_hash: String, generated has of user's password.
+            salt: String, auto generated secret word.
+        Returns:
+            Integer, generated by db user's id.
+        """
+        new_user = User(username=username, hash=pw_hash, salt=salt)
+        new_user.put()
+        return User.get_user_id(new_user)
+
+    @classmethod
+    def get_user_id(cls, user):
+        """ Find specific user id. """
+        return user.key().id()
+
 
 class Like(db.Model):
     """ Represents like for a blog post. """
     user_id = db.IntegerProperty(required=True)
     post_id = db.IntegerProperty(required=True)
+
+    @classmethod
+    def create_like(cls, user_id, post_id):
+        """
+        Adds new like to db.
+        Args:
+            user_id: Integer, id of the user who liked post.
+            post_id: Integer, id of the post that was liked.
+        """
+        new_like = Like(user_id=user_id, post_id=post_id)
+        new_like.put()
+
+    @classmethod
+    def delete_like(cls, user_id, likes):
+        """
+        Delete specific like from db.
+        Args:
+            user_id: Integer, id of the user who removed his/her like
+            likes: List of likes for specific blog post.
+        """
+        like_to_delete = likes.filter("user_id =", user_id).get()
+        like_to_delete.delete()
+
+    @classmethod
+    def get_all_likes(cls, post_id):
+        """
+        Retrieves all likes associated with certain blog post.
+        Args:
+            post_id: Integer that represents blog post id.
+        Returns:
+             List of likes for certain blog post.
+        """
+        return Like.all().filter("post_id =", post_id)
 
 
 class Comment(db.Model):
@@ -464,222 +611,69 @@ class Comment(db.Model):
     @property
     def id(self):
         """ Returns comment id. """
-        return get_comment_id(self)
+        return Comment.get_comment_id(self)
 
     @property
     def author(self):
         """ Returns author nickname. """
-        return get_name_by_id(self.user_id)
+        return User.get_name_by_id(self.user_id)
 
+    @classmethod
+    def get_comment_id(cls, comment):
+        """ Returns id for specific comment. """
+        return comment.key().id()
 
-# DB calls
-# USER repository
-def get_name_by_id(user_id):
-    """
-    Finds user's nickname in db.
-    Args:
-        user_id: Integer, user's id in db.
-    Returns:
-        String that represents user's nickname.
-    """
-    return User.get_by_id(user_id).username
+    @classmethod
+    def get_all_comments(cls, post_id):
+        """
+        Retrieves all comments associated with certain blog post.
+        Args:
+            post_id: Integer that represents blog post id.
+        Returns:
+             List of all comments ordered by time created.
+        """
+        return Comment.all().filter("post_id =", post_id).order("-created")
 
+    @classmethod
+    def create_comment(cls, user_id, post_id, content):
+        """
+        Adds new comment to db.
+        Args:
+            user_id: Integer, id of the user who commented the post.
+            post_id: Integer, id of the post which was commented.
+            content: String, text of the comment.
+        """
+        new_comment = Comment(user_id=user_id, post_id=post_id, content=content)
+        new_comment.put()
 
-def get_user_by_name(name):
-    """ Returns user by his/her nickname. """
-    return User.all().filter('username =', name).get()
+    @classmethod
+    def update_comment(cls, comment_id, content):
+        """
+        Updates the specific comment in db.
+        Ars:
+            comment_id: Integer, id of the specific comment.
+            content: String, updated text of the comment.
+        """
+        comment = Comment.get_comment_by_id(comment_id)
+        if comment:
+            comment.content = content
+            comment.put()
 
+    @classmethod
+    def get_comment_by_id(cls, comment_id):
+        """ Returns specific comment by it's id. """
+        return Comment.get_by_id(comment_id)
 
-def create_user(username, pw_hash, salt):
-    """
-    Create a new user in db.
-    Args:
-        username: String with unique user's nickname.
-        pw_hash: String, generated has of user's password.
-        salt: String, auto generated secret word.
-    Returns:
-        Integer, generated by db user's id.
-    """
-    new_user = User(username=username, hash=pw_hash, salt=salt)
-    new_user.put()
-    return get_user_id(new_user)
-
-
-def get_user_id(user):
-    """ Find specific user id. """
-    return user.key().id()
-
-
-# POST repository
-def get_all_posts():
-    """ Returns all posts ordered by date created. """
-    return BlogPost.all().order("-created")
-
-
-def get_all_user_posts(user_id):
-    """
-    Returns all posts owned by certain user.
-    Args:
-        user_id: Integer, id of the author.
-    Returns:
-        List of all user's posts.
-    """
-    return BlogPost.all().filter("author_id =", user_id).order("-created")
-
-
-def create_post(title, content, author_id):
-    """
-    Adds new post in db.
-    Args:
-        title: String, the topic of blog post.
-        content: String, text of blog post.
-        author_id: Integer, associated with author id from User table.
-    Returns:
-        Integer, generated id of created blog post.
-    """
-    new_post = BlogPost(title=title, content=content, author_id=author_id)
-    new_post.put()
-    return get_post_id(new_post)
-
-
-def update_post(post_id, title, content):
-    """
-    Changes specific post in db.
-    Args:
-        post_id: Integer, id of blog post.
-        title: String, the topic of blog post.
-        content: String, text of blog post.
-    """
-    post = get_post_by_id(post_id)
-    if post:
-        post.title = title
-        post.content = content
-        post.put()
-
-
-def delete_post(post_id):
-    """
-    Delete post and all associated with it likes and comments
-    Args:
-        post_id: Integer that represents id of blog post.
-    """
-    post = get_post_by_id(post_id)
-    if post:
-        post.delete()
-        likes = get_all_likes(post_id)
-        for like in likes:
-            like.delete()
-        comments = get_all_comments(post_id)
-        for comment in comments:
+    @classmethod
+    def delete_comment(cls, comment_id):
+        """
+        Delete specific comment from db.
+        Args:
+            comment_id: Integer, id of comment that should be removed.
+        """
+        comment = Comment.get_comment_by_id(comment_id)
+        if comment:
             comment.delete()
-
-
-def get_post_id(post):
-    """ Returns id for specific post. """
-    return post.key().id()
-
-
-def get_post_by_id(post_id):
-    """
-    Finds specific post in db by it's id.
-    Args:
-        post_id: Integer, id of the post given by db.
-    Returns:
-        Specific blog post.
-    """
-    return BlogPost.get_by_id(post_id)
-
-
-# LIKE repository
-def create_like(user_id, post_id):
-    """
-    Adds new like to db.
-    Args:
-        user_id: Integer, id of the user who liked post.
-        post_id: Integer, id of the post that was liked.
-    """
-    new_like = Like(user_id=user_id, post_id=post_id)
-    new_like.put()
-
-
-def delete_like(user_id, likes):
-    """
-    Delete specific like from db.
-    Args:
-        user_id: Integer, id of the user who removed his/her like
-        likes: List of likes for specific blog post.
-    """
-    like_to_delete = likes.filter("user_id =", user_id).get()
-    like_to_delete.delete()
-
-
-def get_all_likes(post_id):
-    """
-    Retrieves all likes associated with certain blog post.
-    Args:
-        post_id: Integer that represents blog post id.
-    Returns:
-         List of likes for certain blog post.
-    """
-    return Like.all().filter("post_id =", post_id)
-
-
-# COMMENT repository
-def get_comment_id(comment):
-    """ Returns id for specific comment. """
-    return comment.key().id()
-
-
-def get_all_comments(post_id):
-    """
-    Retrieves all comments associated with certain blog post.
-    Args:
-        post_id: Integer that represents blog post id.
-    Returns:
-         List of all comments ordered by time created.
-    """
-    return Comment.all().filter("post_id =", post_id).order("-created")
-
-
-def create_comment(user_id, post_id, content):
-    """
-    Adds new comment to db.
-    Args:
-        user_id: Integer, id of the user who commented the post.
-        post_id: Integer, id of the post which was commented.
-        content: String, text of the comment.
-    """
-    new_comment = Comment(user_id=user_id, post_id=post_id, content=content)
-    new_comment.put()
-
-
-def update_comment(comment_id, content):
-    """
-    Updates the specific comment in db.
-    Ars:
-        comment_id: Integer, id of the specific comment.
-        content: String, updated text of the comment.
-    """
-    comment = get_comment_by_id(comment_id)
-    if comment:
-        comment.content = content
-        comment.put()
-
-
-def get_comment_by_id(comment_id):
-    """ Returns specific comment by it's id. """
-    return Comment.get_by_id(comment_id)
-
-
-def delete_comment(comment_id):
-    """
-    Delete specific comment from db.
-    Args:
-        comment_id: Integer, id of comment that should be removed.
-    """
-    comment = get_comment_by_id(comment_id)
-    if comment:
-        comment.delete()
 
 
 # Cookie security
@@ -740,7 +734,7 @@ def valid_pw(name, pw):
     Returns:
         User if password matches.
     """
-    user = get_user_by_name(name)
+    user = User.get_user_by_name(name)
     if user:
         salt = user.salt
         if user.hash == make_pw_hash(name, pw, salt):
