@@ -76,7 +76,6 @@ def comment_exists(function):
     return wrapper
 
 
-# user_owns_post
 def user_owns_post(function):
     """ Decorator that checks that post was created by current user. """
     @wraps(function)
@@ -85,7 +84,23 @@ def user_owns_post(function):
             return function(self, post_id, post, *args, **kwargs)
         else:
             self.error(404)
-# user_owns_comment
+            return
+    return wrapper
+
+
+def user_owns_comment(function):
+    """ Decorator that checks that comment was created by current user. """
+
+    @wraps(function)
+    def wrapper(self, comment_id, comment, *args, **kwargs):
+        if self.user_id == comment.user_id:
+            return function(self, comment_id, comment, *args, **kwargs)
+        else:
+            self.error(404)
+            return
+    return wrapper
+
+
 
 
 class BlogHandler(webapp2.RequestHandler):
@@ -133,7 +148,8 @@ class MainPage(BlogHandler):
 
     def get(self):
         posts = get_all_posts()
-        self.render("main.html", posts=posts)
+        self.render("main.html",
+                    posts=posts)
 
 
 class NewPost(BlogHandler):
@@ -150,13 +166,16 @@ class NewPost(BlogHandler):
 
         if subject and content:
             # write to db
-            new_post_id = create_post(title=subject, content=content,
+            new_post_id = create_post(title=subject,
+                                      content=content,
                                       author_id=self.user_id)
             self.redirect("/" + str(new_post_id))
         else:
             error = "Fill all fields"
-            self.render("create_post.html", subject=subject,
-                        content=content, error=error)
+            self.render("create_post.html",
+                        subject=subject,
+                        content=content,
+                        error=error)
 
 
 class EditPost(BlogHandler):
@@ -164,29 +183,33 @@ class EditPost(BlogHandler):
 
     @user_logged_in
     @post_exists
+    @user_owns_post
     def get(self, post_id, post):
-        if self.user_id == post.author_id:
-            subject = post.title
-            content = post.content
-            self.render("edit_post.html", subject=subject,
-                        content=content, post_id=post_id)
-        else:
-            self.write("Only author can edit his/her own post!")
+        subject = post.title
+        content = post.content
+        self.render("edit_post.html",
+                    subject=subject,
+                    content=content,
+                    post_id=post_id)
 
     @user_logged_in
     @post_exists
+    @user_owns_post
     def post(self, post_id, post):
         subject = self.request.get("subject")
         content = self.request.get("content")
-        if self.user_id == post.author_id:
-            if subject and content:
-                # write to db
-                update_post(post_id=post_id, title=subject, content=content)
-                self.redirect("/%s" % post_id)
-            else:
-                error = "Fill all fields"
-                self.render("edit_post.html", subject=subject,
-                            content=content, error=error)
+        if subject and content:
+            # write to db
+            update_post(post_id=post_id,
+                        title=subject,
+                        content=content)
+            self.redirect("/%s" % post_id)
+        else:
+            error = "Fill all fields"
+            self.render("edit_post.html",
+                        subject=subject,
+                        content=content,
+                        error=error)
 
 
 class DeletePost(BlogHandler):
@@ -194,13 +217,11 @@ class DeletePost(BlogHandler):
 
     @user_logged_in
     @post_exists
+    @user_owns_post
     def get(self, post_id, post):
-        if self.user_id == post.author_id:
-            delete_post(post_id)
-            sleep(0.1)
-            self.redirect("/")
-        else:
-            self.write("Only author can delete his/her own post!")
+        delete_post(post_id)
+        sleep(0.1)
+        self.redirect("/")
 
 
 class ViewPost(BlogHandler):
@@ -345,27 +366,29 @@ class EditComment(BlogHandler):
 
     @user_logged_in
     @comment_exists
+    @user_owns_comment
     def get(self, comment_id, comment):
-        if self.user_id == comment.user_id:
-            content = comment.content
-            self.render("edit_comment.html", content=content,
-                        comment_id=comment_id, post_id=comment.post_id)
-        else:
-            self.write("Only author can edit his/her own post!")
+        content = comment.content
+        self.render("edit_comment.html",
+                    content=content,
+                    comment_id=comment_id,
+                    post_id=comment.post_id)
 
     @user_logged_in
     @comment_exists
+    @user_owns_comment
     def post(self, comment_id, comment):
         content = self.request.get("content")
-        if self.user_id == comment.user_id:
-            if content and comment_id:
-                # write to db
-                update_comment(comment_id, content)
-                sleep(0.1)
-                self.redirect("/%s" % get_comment_by_id(comment_id).post_id)
-            else:
-                error = "Comment can't be empty"
-                self.render("edit_comment.html", content=content, error=error)
+        if content and comment_id:
+            # write to db
+            update_comment(comment_id, content)
+            sleep(0.1)
+            self.redirect("/%s" % get_comment_by_id(comment_id).post_id)
+        else:
+            error = "Comment can't be empty"
+            self.render("edit_comment.html",
+                        content=content,
+                        error=error)
 
 
 class DeleteComment(BlogHandler):
@@ -373,14 +396,12 @@ class DeleteComment(BlogHandler):
 
     @user_logged_in
     @comment_exists
+    @user_owns_comment
     def get(self, comment_id, comment):
         post_id = comment.post_id
-        if self.user_id == comment.user_id:
-            delete_comment(comment_id)
-            sleep(0.1)
-            self.redirect("/%s" % post_id)
-        else:
-            self.write("Only author can delete his/her own post!")
+        delete_comment(comment_id)
+        sleep(0.1)
+        self.redirect("/%s" % post_id)
 
 
 # DB ENTITIES
