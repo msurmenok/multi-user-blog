@@ -1,7 +1,7 @@
 /* FONTS */
-p, a, em, textarea, input[type="text"], input[type="password"], span {
+p, a, em, textarea, input[type="text"], input[type="password"], form span {
     font-family: "Helvetica Neue", Helvetica,Arial, sans-serif;
-    font-size: 1.2em;
+    font-size: 1.3em;
     font-weight: normal;
 }
 
@@ -87,7 +87,7 @@ hr {
 
 label span {
     display: inline-block;
-    min-width: 130px;
+    min-width: 140px;
 }
 
 .userform label {
