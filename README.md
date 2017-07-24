@@ -26,6 +26,7 @@ Running version on https://multi-user-blog-165621.appspot.com/
 
 ## Preview
 ![multi user blog preview](/preview1.png?raw=true)
+##
 ![multi user blog preview](/preview2.png?raw=true)
 
 ## License
