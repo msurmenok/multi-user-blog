@@ -11,7 +11,7 @@ Running version on https://multi-user-blog-165621.appspot.com/
 (based on [Quickstart from Google](https://cloud.google.com/appengine/docs/standard/python/quickstart) and [Udacity instructions](https://drive.google.com/file/d/0Byu3UemwRffDbjd0SkdvajhIRW8/view))
 
 - Create a new project on [Cloud Platform Console](https://console.cloud.google.com/projectselector/appengine/create?lang=python)
-- Download project `git clone https://github.com/MariiaSurmenok/multi-user-blog.git`
+- Download project `git clone https://github.com/msurmenok/multi-user-blog.git`
 - Change directory to the project `cd multi-user-blog`
 
 **To run application on your local machine:**
@@ -30,4 +30,4 @@ Running version on https://multi-user-blog-165621.appspot.com/
 ![multi user blog preview](/preview2.png?raw=true)
 
 ## License
-Code released under the [MIT License](https://github.com/MariiaSurmenok/multi-user-blog/blob/master/LICENSE)
+Code released under the [MIT License](https://github.com/msurmenok/multi-user-blog/blob/master/LICENSE)
